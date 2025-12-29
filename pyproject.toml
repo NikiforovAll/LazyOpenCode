@@ -1,0 +1,31 @@
+[project]
+name = "lazyopencode"
+version = "0.1.0"
+description = "TUI for managing OpenCode customizations"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "textual>=0.89.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+lazyopencode = "lazyopencode:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lazyopencode"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

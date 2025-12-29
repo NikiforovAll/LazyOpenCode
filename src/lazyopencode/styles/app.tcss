@@ -1,0 +1,132 @@
+/* LazyOpenCode TUI Application Styles */
+/* Lazygit-inspired panel layout */
+
+Screen {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 1fr 2fr;
+    background: $surface;
+}
+
+#sidebar {
+    layout: vertical;
+    height: 100%;
+}
+
+#main-pane {
+    height: 100%;
+}
+
+/* Status Panel */
+StatusPanel {
+    height: 3;
+    border: solid $primary;
+    padding: 0 1;
+    margin-bottom: 1;
+    border-title-align: left;
+}
+
+/* Type Panels */
+TypePanel {
+    height: 1fr;
+    min-height: 3;
+    border: solid $primary;
+    padding: 0 1;
+    margin-bottom: 1;
+    border-title-align: left;
+    border-subtitle-align: right;
+}
+
+TypePanel:focus {
+    border: double $accent;
+}
+
+TypePanel:focus-within {
+    border: double $accent;
+}
+
+TypePanel.empty {
+    height: 3;
+    min-height: 3;
+    max-height: 3;
+}
+
+TypePanel .items-container {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+TypePanel .item {
+    height: 1;
+    width: 100%;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+TypePanel .item-selected {
+    background: $accent;
+    text-style: bold;
+}
+
+/* Combined Panel (Rules, MCPs, Plugins) */
+CombinedPanel {
+    height: 1fr;
+    min-height: 3;
+    border: solid $primary;
+    padding: 0 1;
+    margin-bottom: 1;
+    border-title-align: left;
+    border-subtitle-align: right;
+}
+
+CombinedPanel:focus {
+    border: double $accent;
+}
+
+CombinedPanel:focus-within {
+    border: double $accent;
+}
+
+CombinedPanel.empty {
+    height: 3;
+    min-height: 3;
+    max-height: 3;
+}
+
+CombinedPanel .items-container {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+CombinedPanel .item {
+    height: 1;
+    width: 100%;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+CombinedPanel .item-selected {
+    background: $accent;
+    text-style: bold;
+}
+
+/* Main Pane */
+MainPane {
+    height: 100%;
+    border: solid $primary;
+    padding: 1 0 1 2;
+    overflow-y: auto;
+    border-title-align: left;
+    border-subtitle-align: right;
+}
+
+MainPane:focus {
+    border: double $accent;
+}
+
+/* Footer */
+AppFooter {
+    dock: bottom;
+    height: 1;
+    background: $surface;
+}
