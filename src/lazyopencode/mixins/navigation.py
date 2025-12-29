@@ -21,7 +21,7 @@ class NavigationMixin:
         return None
 
     def action_focus_next_panel(self) -> None:
-        """Focus the next panel."""
+        """Focus the next panel. Ensures combined panel starts at first tab."""
         app = cast("LazyOpenCode", self)
         all_panels: list[Widget] = []
         all_panels.extend(app._panels)
@@ -44,11 +44,17 @@ class NavigationMixin:
                 current_idx = -1  # Will become 0
 
         next_idx = (current_idx + 1) % len(all_panels)
-        if all_panels[next_idx]:
-            all_panels[next_idx].focus()
+        next_panel = all_panels[next_idx]
+        if next_panel:
+            # If entering combined panel from above, start at first tab
+            from lazyopencode.widgets.combined_panel import CombinedPanel
+
+            if isinstance(next_panel, CombinedPanel):
+                next_panel.switch_to_tab(0)
+            next_panel.focus()
 
     def action_focus_previous_panel(self) -> None:
-        """Focus the previous panel."""
+        """Focus the previous panel. Ensures combined panel starts at last tab."""
         app = cast("LazyOpenCode", self)
         all_panels: list[Widget] = []
         all_panels.extend(app._panels)
@@ -71,8 +77,14 @@ class NavigationMixin:
                 current_idx = 0  # Will become -1 -> last
 
         prev_idx = (current_idx - 1) % len(all_panels)
-        if all_panels[prev_idx]:
-            all_panels[prev_idx].focus()
+        prev_panel = all_panels[prev_idx]
+        if prev_panel:
+            # If entering combined panel from below (or wrap around), start at last tab
+            from lazyopencode.widgets.combined_panel import CombinedPanel
+
+            if isinstance(prev_panel, CombinedPanel):
+                prev_panel.switch_to_tab(len(prev_panel.TABS) - 1)
+            prev_panel.focus()
 
     def action_focus_panel_1(self) -> None:
         """Focus Commands panel."""
@@ -111,3 +123,19 @@ class NavigationMixin:
         app = cast("LazyOpenCode", self)
         if app._main_pane:
             app._main_pane.focus()
+
+    def action_prev_view(self) -> None:
+        """Switch view based on focused widget."""
+        app = cast("LazyOpenCode", self)
+        if app._combined_panel and app._combined_panel.has_focus:
+            app._combined_panel.action_prev_tab()
+        elif app._main_pane:
+            app._main_pane.action_prev_view()
+
+    def action_next_view(self) -> None:
+        """Switch view based on focused widget."""
+        app = cast("LazyOpenCode", self)
+        if app._combined_panel and app._combined_panel.has_focus:
+            app._combined_panel.action_next_tab()
+        elif app._main_pane:
+            app._main_pane.action_next_view()

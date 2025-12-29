@@ -36,6 +36,8 @@ class CombinedPanel(Widget):
         Binding("right", "next_tab", "Next Tab", show=False),
         Binding("h", "prev_tab", "Prev Tab", show=False),
         Binding("l", "next_tab", "Next Tab", show=False),
+        Binding("[", "prev_tab", "Prev Tab", show=False),
+        Binding("]", "next_tab", "Next Tab", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -288,12 +290,18 @@ class CombinedPanel(Widget):
             self.post_message(self.DrillDown(self.selected_customization))
 
     def action_focus_next_panel(self) -> None:
-        """Delegate to app's focus_next_panel action."""
-        cast("LazyOpenCode", self.app).action_focus_next_panel()
+        """Cycle through tabs, then delegate to app when on last tab."""
+        if self.current_tab < len(self.TABS) - 1:
+            self.current_tab += 1
+        else:
+            cast("LazyOpenCode", self.app).action_focus_next_panel()
 
     def action_focus_previous_panel(self) -> None:
-        """Delegate to app's focus_previous_panel action."""
-        cast("LazyOpenCode", self.app).action_focus_previous_panel()
+        """Cycle through tabs backward, then delegate to app when on first tab."""
+        if self.current_tab > 0:
+            self.current_tab -= 1
+        else:
+            cast("LazyOpenCode", self.app).action_focus_previous_panel()
 
     def set_customizations(self, customizations: list[Customization]) -> None:
         """Set the customizations for all tabs."""

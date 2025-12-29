@@ -238,16 +238,6 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Open in editor (not implemented)."""
         self.notify("Edit not implemented yet", severity="warning")
 
-    def action_prev_view(self) -> None:
-        """Switch to previous view in main pane."""
-        if self._main_pane:
-            self._main_pane.action_prev_view()
-
-    def action_next_view(self) -> None:
-        """Switch to next view in main pane."""
-        if self._main_pane:
-            self._main_pane.action_next_view()
-
 
 def create_app(
     project_root: Path | None = None,
