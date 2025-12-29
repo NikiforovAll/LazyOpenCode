@@ -9,7 +9,8 @@
             "git diff": "allow",
             "ls": "allow",
             "pwd": "allow",
-            "mkdir *": "allow"
+            "mkdir *": "allow",
+            "*": "ask"
         }
     },
     "tools": {

@@ -1,5 +1,9 @@
 """Main LazyOpenCode TUI Application."""
 
+import os
+import shlex
+import subprocess
+import sys
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -235,8 +239,45 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
     # action_toggle_help handled by HelpMixin
 
     def action_open_in_editor(self) -> None:
-        """Open in editor (not implemented)."""
-        self.notify("Edit not implemented yet", severity="warning")
+        """Open currently selected customization in editor."""
+        panel = self._get_focused_panel()
+        customization = None
+
+        if panel:
+            customization = panel.selected_customization
+        elif self._combined_panel and self._combined_panel.has_focus:
+            customization = self._combined_panel.selected_customization
+
+        if not customization:
+            self.notify("No customization selected", severity="warning")
+            return
+
+        file_path = customization.path
+        if customization.type == CustomizationType.SKILL:
+            file_path = customization.path.parent
+
+        if file_path and file_path.exists():
+            self._open_path_in_editor(file_path)
+        else:
+            self.notify("File does not exist", severity="error")
+
+    def action_open_user_config(self) -> None:
+        """Open user configuration in editor."""
+        config_path = self._discovery_service.global_config_path / "opencode.json"
+        if not config_path.exists():
+            # Fallback to the directory if file doesn't exist
+            config_path = self._discovery_service.global_config_path
+
+        self._open_path_in_editor(config_path)
+
+    def _open_path_in_editor(self, path: Path) -> None:
+        """Helper to open a path in the system editor."""
+        editor = os.environ.get("EDITOR", "vi")
+        try:
+            cmd = shlex.split(editor) + [str(path)]
+            subprocess.Popen(cmd, shell=(sys.platform == "win32"))
+        except Exception as e:
+            self.notify(f"Error opening editor: {e}", severity="error")
 
 
 def create_app(

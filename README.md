@@ -57,6 +57,8 @@ uv run ruff format .
 | `j` / `↓` | Move down      |
 | `k` / `↑` | Move up        |
 | `Tab`     | Next panel     |
+| `e`       | Edit selected  |
+| `ctrl`+`u` | User Config    |
 | `?`       | Help           |
 
 ## Configuration Paths

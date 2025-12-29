@@ -50,7 +50,8 @@ class HelpMixin:
                  Combined: switch tabs
 
 [bold]Actions[/]
-  e              Open in $EDITOR (Not Implemented)
+  e              Open in $EDITOR
+  ctrl+u         Open User Config
   r              Refresh from disk
   ?              Toggle this help
   q              Quit
