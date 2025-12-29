@@ -5,6 +5,8 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Static
 
+from lazyopencode.widgets.helpers.rendering import format_keybinding
+
 
 class AppFooter(Widget):
     """Footer displaying available keybindings."""
@@ -13,16 +15,16 @@ class AppFooter(Widget):
     AppFooter {
         dock: bottom;
         height: 1;
-        background: $surface;
-        color: $text-muted;
+        background: $panel;
     }
 
     AppFooter .footer-content {
-        height: 1;
-        text-style: bold;
+        width: 100%;
+        text-align: center;
     }
     """
 
+    filter_level: reactive[str] = reactive("All")
     search_active: reactive[bool] = reactive(False)
 
     def compose(self) -> ComposeResult:
@@ -31,24 +33,21 @@ class AppFooter(Widget):
 
     def _get_footer_text(self) -> str:
         """Build the footer text with keybindings."""
-        bindings = [
-            ("q", "Quit"),
-            ("?", "Help"),
-            ("r", "Refresh"),
-            ("e", "Edit"),
-            ("a", "All"),
-            ("g", "Global"),
-            ("p", "Project"),
-            ("/", "Search"),
-            ("[", "["),
-            ("]", "]"),
-        ]
+        all_key = format_keybinding("a", "All", active=self.filter_level == "All")
+        user_key = format_keybinding(
+            "g", "Global", active=self.filter_level == "Global"
+        )
+        project_key = format_keybinding(
+            "p", "Project", active=self.filter_level == "Project"
+        )
+        search_key = format_keybinding("/", "Search", active=self.search_active)
 
-        parts = []
-        for key, label in bindings:
-            parts.append(f"[b]{key}[/b] {label}")
-
-        return "  ".join(parts)
+        return (
+            f"[bold]q[/] Quit  [bold]?[/] Help  [bold]r[/] Refresh  "
+            f"[bold]e[/] Edit  [bold]c[/] Copy  [bold]m[/] Move  [bold]d[/] Delete  "
+            f"{all_key}  {user_key}  {project_key}  "
+            f"{search_key}  │  [bold][$accent]^p[/][/] Palette"
+        )
 
     def on_mount(self) -> None:
         """Handle mount event."""
@@ -63,6 +62,10 @@ class AppFooter(Widget):
             except Exception:
                 pass
 
-    def watch_search_active(self, active: bool) -> None:
+    def watch_filter_level(self, _level: str) -> None:
+        """React to filter level changes."""
+        self._update_content()
+
+    def watch_search_active(self, _active: bool) -> None:
         """React to search active changes."""
         self._update_content()

@@ -57,14 +57,14 @@ class StatusPanel(Widget):
             except Exception:
                 pass
 
-    def watch_config_path(self, path: str) -> None:
+    def watch_config_path(self, _path: str) -> None:
         """React to config path changes."""
         self._update_content()
 
-    def watch_filter_level(self, level: str) -> None:
+    def watch_filter_level(self, _level: str) -> None:
         """React to filter level changes."""
         self._update_content()
 
-    def watch_search_active(self, active: bool) -> None:
+    def watch_search_active(self, _active: bool) -> None:
         """React to search active changes."""
         self._update_content()

@@ -54,7 +54,6 @@ class CustomizationType(Enum):
             CustomizationType.SKILL: "3",
             CustomizationType.RULES: "4",
             CustomizationType.MCP: "5",
-            CustomizationType.PLUGIN: "6",
         }
         return mapping[self]
 

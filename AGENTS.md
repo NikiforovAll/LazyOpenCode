@@ -2,6 +2,12 @@
 
 A keyboard-driven TUI for visualizing and managing OpenCode customizations.
 
+## Environment Rules
+- **OS**: Windows (Git Bash). Use forward slashes `/` and `/c/` prefix for absolute paths.
+- **Search**: `rg` and `fd` are installed. Use them for fast searching.
+- **Quality Gates**: Always run quality gates before asking the user to commit changes. Use `/run-quality-gates` command or `scripts/check_quality.sh`.
+- **TUI Verification**: Do NOT run `uv run lazyopencode` to verify the application. It is a TUI and output cannot be captured effectively. Use unit tests or static analysis instead.
+
 ## Project Overview
 
 - **Language**: Python 3.11+
@@ -9,6 +15,17 @@ A keyboard-driven TUI for visualizing and managing OpenCode customizations.
 - **Package Manager**: uv
 - **Architecture**: Mixin-based Textual app with service layer
 - **Inspired by**: LazyClaude, Lazygit
+
+## Implementation Status (Phases 0-5 Completed)
+
+- [x] **Foundation**: Project structure, dependencies, CLI entry point
+- [x] **Models**: Customization types, data classes
+- [x] **Widgets**: Type panels, combined panel, detail pane, status bar, footer
+- [x] **Parsers**: Full support for Commands, Agents, Skills, Rules, MCPs, Plugins
+- [x] **Navigation**: Vim-like navigation (j/k), tab switching, number shortcuts
+- [x] **Filtering**: Filter by Global/Project, Search overlay
+- [x] **Theme**: Gruvbox theme (default) matching LazyClaude style
+- [ ] **Polish**: Settings persistence, comprehensive tests (In Progress)
 
 ## Quick Start
 

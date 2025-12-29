@@ -42,7 +42,7 @@ class MainPane(Widget):
         Binding("up", "scroll_up", "Scroll up", show=False),
         Binding("d", "scroll_page_down", "Page down", show=False),
         Binding("u", "scroll_page_up", "Page up", show=False),
-        Binding("g", "scroll_top", "Scroll top", show=False),
+        Binding("home", "scroll_top", "Scroll top", show=False),
         Binding(
             "G", "scroll_bottom", "Scroll bottom", show=False, key_display="shift+g"
         ),
@@ -208,7 +208,7 @@ class MainPane(Widget):
             return ""
         return str(self.customization.path)
 
-    def watch_view_mode(self, mode: str) -> None:
+    def watch_view_mode(self, _mode: str) -> None:
         """React to view mode changes."""
         self._update_title()
         self._refresh_display()
@@ -220,7 +220,7 @@ class MainPane(Widget):
         self.border_subtitle = self._render_footer()
         self._refresh_display()
 
-    def watch_display_path(self, path: Path | None) -> None:
+    def watch_display_path(self, _path: Path | None) -> None:
         """React to display path changes."""
         self.border_subtitle = self._render_footer()
         self.refresh()

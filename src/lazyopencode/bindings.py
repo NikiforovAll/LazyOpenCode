@@ -21,5 +21,4 @@ APP_BINDINGS: list[BindingType] = [
     Binding("3", "focus_panel_3", "Panel 3", show=False),
     Binding("4", "focus_panel_4", "Panel 4", show=False),
     Binding("5", "focus_panel_5", "Panel 5", show=False),
-    Binding("6", "focus_panel_6", "Panel 6", show=False),
 ]

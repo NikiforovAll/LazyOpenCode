@@ -1,6 +1,5 @@
 {
     "$schema": "https://opencode.ai/config.json",
-    // Theme configuration
     "theme": "everforest",
     "permission": {
         "external_directory": "allow",
@@ -9,14 +8,14 @@
             "git status": "allow",
             "git diff": "allow",
             "ls": "allow",
-            "pwd": "allow"
+            "pwd": "allow",
+            "mkdir *": "allow"
         }
     },
     "tools": {
         "read": true,
         "write": true,
         "edit":true,
-        "bash": true,
         "grep": true,
         "glob": true,
         "list": true,

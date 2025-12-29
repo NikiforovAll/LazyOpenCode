@@ -7,23 +7,29 @@ from textual.containers import Container
 
 from lazyopencode import __version__
 from lazyopencode.bindings import APP_BINDINGS
+from lazyopencode.mixins.filtering import FilteringMixin
+from lazyopencode.mixins.help import HelpMixin
+from lazyopencode.mixins.navigation import NavigationMixin
 from lazyopencode.models.customization import (
     ConfigLevel,
     Customization,
     CustomizationType,
 )
 from lazyopencode.services.discovery import ConfigDiscoveryService
+from lazyopencode.themes import CUSTOM_THEMES
 from lazyopencode.widgets.app_footer import AppFooter
 from lazyopencode.widgets.combined_panel import CombinedPanel
 from lazyopencode.widgets.detail_pane import MainPane
+from lazyopencode.widgets.filter_input import FilterInput
 from lazyopencode.widgets.status_panel import StatusPanel
 from lazyopencode.widgets.type_panel import TypePanel
 
 
-class LazyOpenCode(App):
+class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
     """A lazygit-style TUI for visualizing OpenCode customizations."""
 
     CSS_PATH = "styles/app.tcss"
+    LAYERS = ["default", "overlay"]
     BINDINGS = APP_BINDINGS
 
     TITLE = f"LazyOpenCode v{__version__}"
@@ -37,6 +43,7 @@ class LazyOpenCode(App):
     ) -> None:
         """Initialize LazyOpenCode application."""
         super().__init__()
+        self.theme = "gruvbox"
         self._discovery_service = discovery_service or ConfigDiscoveryService(
             project_root=project_root,
             global_config_path=global_config_path,
@@ -48,6 +55,7 @@ class LazyOpenCode(App):
         self._combined_panel: CombinedPanel | None = None
         self._status_panel: StatusPanel | None = None
         self._main_pane: MainPane | None = None
+        self._filter_input: FilterInput | None = None
         self._app_footer: AppFooter | None = None
         self._last_focused_panel: TypePanel | None = None
         self._last_focused_combined: bool = False
@@ -77,11 +85,17 @@ class LazyOpenCode(App):
         self._main_pane = MainPane(id="main-pane")
         yield self._main_pane
 
+        self._filter_input = FilterInput(id="filter-input")
+        yield self._filter_input
+
         self._app_footer = AppFooter(id="app-footer")
         yield self._app_footer
 
     def on_mount(self) -> None:
         """Handle mount event - load customizations."""
+        for theme in CUSTOM_THEMES:
+            self.register_theme(theme)
+
         self._load_customizations()
         self._update_status_panel()
         project_name = self._discovery_service.project_root.name
@@ -92,12 +106,17 @@ class LazyOpenCode(App):
 
     def _update_status_panel(self) -> None:
         """Update status panel with current config path and filter level."""
+        filter_label = self._level_filter.label if self._level_filter else "All"
+
         if self._status_panel:
             project_name = self._discovery_service.project_root.name
             self._status_panel.config_path = project_name
-            self._status_panel.filter_level = (
-                self._level_filter.label if self._level_filter else "All"
-            )
+            self._status_panel.filter_level = filter_label
+
+        if self._app_footer:
+            self._app_footer.filter_level = filter_label
+            # Also update search active status
+            self._app_footer.search_active = bool(self._search_query)
 
     def _load_customizations(self) -> None:
         """Load customizations from discovery service."""
@@ -154,100 +173,56 @@ class LazyOpenCode(App):
             self._main_pane.customization = message.customization
             self._main_pane.focus()
 
-    # Navigation actions
+    # Filter input message handlers
 
-    def _get_focused_panel(self) -> TypePanel | None:
-        """Get the currently focused TypePanel."""
-        for panel in self._panels:
-            if panel.has_focus:
-                return panel
-        return None
+    def on_filter_input_filter_changed(
+        self, message: FilterInput.FilterChanged
+    ) -> None:
+        """Handle filter query changes (real-time filtering)."""
+        self._search_query = message.query
+        self._last_focused_panel = None
+        if self._main_pane:
+            self._main_pane.customization = None
+        self._update_status_panel()  # Updates footer search active state
+        self._update_panels()
 
-    def action_focus_next_panel(self) -> None:
-        """Focus the next panel."""
-        all_panels = self._panels + (
-            [self._combined_panel] if self._combined_panel else []
-        )
-        current_idx = -1
-        for i, panel in enumerate(all_panels):
-            if panel and panel.has_focus:
-                current_idx = i
-                break
-        next_idx = (current_idx + 1) % len(all_panels)
-        if all_panels[next_idx]:
-            all_panels[next_idx].focus()
-
-    def action_focus_previous_panel(self) -> None:
-        """Focus the previous panel."""
-        all_panels = self._panels + (
-            [self._combined_panel] if self._combined_panel else []
-        )
-        current_idx = 0
-        for i, panel in enumerate(all_panels):
-            if panel and panel.has_focus:
-                current_idx = i
-                break
-        prev_idx = (current_idx - 1) % len(all_panels)
-        if all_panels[prev_idx]:
-            all_panels[prev_idx].focus()
-
-    def action_focus_panel_1(self) -> None:
-        """Focus Commands panel."""
-        if len(self._panels) > 0:
+    def on_filter_input_filter_cancelled(
+        self,
+        message: FilterInput.FilterCancelled,  # noqa: ARG002
+    ) -> None:
+        """Handle filter cancellation."""
+        self._search_query = ""
+        self._last_focused_panel = None
+        if self._main_pane:
+            self._main_pane.customization = None
+        self._update_status_panel()
+        self._update_panels()
+        # Restore focus
+        if self._panels:
             self._panels[0].focus()
 
-    def action_focus_panel_2(self) -> None:
-        """Focus Agents panel."""
-        if len(self._panels) > 1:
-            self._panels[1].focus()
+    def on_filter_input_filter_applied(
+        self,
+        message: FilterInput.FilterApplied,  # noqa: ARG002
+    ) -> None:
+        """Handle filter application (Enter key)."""
+        if self._filter_input:
+            self._filter_input.hide()
+        # Restore focus
+        if self._panels:
+            self._panels[0].focus()
 
-    def action_focus_panel_3(self) -> None:
-        """Focus Skills panel."""
-        if len(self._panels) > 2:
-            self._panels[2].focus()
+    # Navigation actions (handled by NavigationMixin)
 
-    def action_focus_panel_4(self) -> None:
-        """Focus Rules tab in combined panel."""
-        if self._combined_panel:
-            self._combined_panel.switch_to_tab(0)
-            self._combined_panel.focus()
+    # Filter actions (handled by FilteringMixin)
 
-    def action_focus_panel_5(self) -> None:
-        """Focus MCPs tab in combined panel."""
-        if self._combined_panel:
-            self._combined_panel.switch_to_tab(1)
-            self._combined_panel.focus()
-
-    def action_focus_panel_6(self) -> None:
-        """Focus Plugins tab in combined panel."""
-        if self._combined_panel:
-            self._combined_panel.switch_to_tab(2)
-            self._combined_panel.focus()
-
-    def action_focus_main_pane(self) -> None:
-        """Focus the main pane."""
-        if self._main_pane:
-            self._main_pane.focus()
-
-    # Filter actions
-
-    def action_filter_all(self) -> None:
-        """Show all customizations."""
-        self._level_filter = None
-        self._update_status_panel()
-        self._update_panels()
-
-    def action_filter_global(self) -> None:
-        """Show only global customizations."""
-        self._level_filter = ConfigLevel.GLOBAL
-        self._update_status_panel()
-        self._update_panels()
-
-    def action_filter_project(self) -> None:
-        """Show only project customizations."""
-        self._level_filter = ConfigLevel.PROJECT
-        self._update_status_panel()
-        self._update_panels()
+    def action_search(self) -> None:
+        """Activate search."""
+        if self._filter_input:
+            if self._filter_input.is_visible:
+                self._filter_input.hide()
+            else:
+                self._filter_input.show()
 
     # Other actions
 
@@ -257,16 +232,7 @@ class LazyOpenCode(App):
         self._load_customizations()
         self.notify("Refreshed", severity="information")
 
-    def action_toggle_help(self) -> None:
-        """Show help."""
-        self.notify(
-            "Keys: q=quit, ?=help, 1-6=panels, j/k=nav, Tab=next, a/g/p=filter",
-            timeout=5.0,
-        )
-
-    def action_search(self) -> None:
-        """Activate search (not implemented)."""
-        self.notify("Search not implemented yet", severity="warning")
+    # action_toggle_help handled by HelpMixin
 
     def action_open_in_editor(self) -> None:
         """Open in editor (not implemented)."""

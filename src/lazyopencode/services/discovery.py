@@ -7,6 +7,11 @@ from lazyopencode.models.customization import (
     Customization,
     CustomizationType,
 )
+from lazyopencode.services.parsers.agent import AgentParser
+from lazyopencode.services.parsers.command import CommandParser
+from lazyopencode.services.parsers.mcp import MCPParser
+from lazyopencode.services.parsers.rules import RulesParser
+from lazyopencode.services.parsers.skill import SkillParser
 
 
 class ConfigDiscoveryService:
@@ -28,7 +33,13 @@ class ConfigDiscoveryService:
         self.global_config_path = global_config_path or (
             Path.home() / ".config" / "opencode"
         )
-        self._parsers: list = []  # Will be populated with parsers
+        self._parsers = {
+            CustomizationType.COMMAND: CommandParser(),
+            CustomizationType.AGENT: AgentParser(),
+            CustomizationType.SKILL: SkillParser(),
+            CustomizationType.RULES: RulesParser(),
+            CustomizationType.MCP: MCPParser(),
+        }
         self._cache: list[Customization] | None = None
 
     @property
@@ -81,9 +92,6 @@ class ConfigDiscoveryService:
         # Discover MCPs from opencode.json
         customizations.extend(self._discover_mcps(level))
 
-        # Discover plugins
-        customizations.extend(self._discover_plugins(base_path, level))
-
         return customizations
 
     def _discover_commands(
@@ -95,16 +103,12 @@ class ConfigDiscoveryService:
             return []
 
         customizations = []
+        parser = self._parsers[CustomizationType.COMMAND]
+
         for md_file in commands_path.glob("*.md"):
-            customizations.append(
-                Customization(
-                    name=md_file.stem,
-                    type=CustomizationType.COMMAND,
-                    level=level,
-                    path=md_file,
-                    description=f"Command: {md_file.stem}",
-                )
-            )
+            if parser.can_parse(md_file):
+                customizations.append(parser.parse(md_file, level))
+
         return customizations
 
     def _discover_agents(
@@ -116,16 +120,12 @@ class ConfigDiscoveryService:
             return []
 
         customizations = []
+        parser = self._parsers[CustomizationType.AGENT]
+
         for md_file in agents_path.glob("*.md"):
-            customizations.append(
-                Customization(
-                    name=md_file.stem,
-                    type=CustomizationType.AGENT,
-                    level=level,
-                    path=md_file,
-                    description=f"Agent: {md_file.stem}",
-                )
-            )
+            if parser.can_parse(md_file):
+                customizations.append(parser.parse(md_file, level))
+
         return customizations
 
     def _discover_skills(
@@ -137,120 +137,44 @@ class ConfigDiscoveryService:
             return []
 
         customizations = []
+        parser = self._parsers[CustomizationType.SKILL]
+
         for skill_dir in skills_path.iterdir():
             if skill_dir.is_dir():
                 skill_file = skill_dir / "SKILL.md"
-                if skill_file.exists():
-                    customizations.append(
-                        Customization(
-                            name=skill_dir.name,
-                            type=CustomizationType.SKILL,
-                            level=level,
-                            path=skill_file,
-                            description=f"Skill: {skill_dir.name}",
-                        )
-                    )
+                if parser.can_parse(skill_file):
+                    customizations.append(parser.parse(skill_file, level))
+
         return customizations
 
     def _discover_rules(self, level: ConfigLevel) -> list[Customization]:
         """Discover AGENTS.md rules files."""
         customizations = []
+        parser = self._parsers[CustomizationType.RULES]
 
         if level == ConfigLevel.GLOBAL:
             agents_md = self.global_config_path / "AGENTS.md"
         else:
             agents_md = self.project_root / "AGENTS.md"
 
-        if agents_md.exists():
-            customizations.append(
-                Customization(
-                    name="AGENTS.md",
-                    type=CustomizationType.RULES,
-                    level=level,
-                    path=agents_md,
-                    description="Project rules and instructions",
-                )
-            )
+        if parser.can_parse(agents_md):
+            customizations.append(parser.parse(agents_md, level))
 
         return customizations
 
     def _discover_mcps(self, level: ConfigLevel) -> list[Customization]:
         """Discover MCP configurations from opencode.json."""
-        import json
-
         if level == ConfigLevel.GLOBAL:
             config_path = self.global_config_path / "opencode.json"
         else:
             config_path = self.project_root / "opencode.json"
 
-        if not config_path.exists():
-            return []
+        parser = self._parsers[CustomizationType.MCP]
+        # Cast to MCPParser to access parse_mcps
+        if isinstance(parser, MCPParser) and parser.can_parse(config_path):
+            return parser.parse_mcps(config_path, level)
 
-        customizations = []
-        try:
-            with open(config_path) as f:
-                # Handle JSONC (JSON with comments)
-                content = f.read()
-                # Simple comment stripping (not perfect but works for most cases)
-                lines = []
-                for line in content.split("\n"):
-                    stripped = line.strip()
-                    if not stripped.startswith("//"):
-                        # Remove inline comments
-                        if "//" in line and '"' not in line.split("//")[0]:
-                            line = line.split("//")[0]
-                        lines.append(line)
-                clean_content = "\n".join(lines)
-                config = json.loads(clean_content)
-
-            mcps = config.get("mcp", {})
-            for mcp_name, mcp_config in mcps.items():
-                mcp_type = mcp_config.get("type", "unknown")
-                customizations.append(
-                    Customization(
-                        name=mcp_name,
-                        type=CustomizationType.MCP,
-                        level=level,
-                        path=config_path,
-                        description=f"MCP ({mcp_type})",
-                        metadata=mcp_config,
-                    )
-                )
-        except (json.JSONDecodeError, OSError):
-            pass
-
-        return customizations
-
-    def _discover_plugins(
-        self, base_path: Path, level: ConfigLevel
-    ) -> list[Customization]:
-        """Discover plugin customizations."""
-        plugins_path = base_path / "plugin"
-        if not plugins_path.exists():
-            return []
-
-        customizations = []
-        for plugin_file in plugins_path.glob("*.js"):
-            customizations.append(
-                Customization(
-                    name=plugin_file.stem,
-                    type=CustomizationType.PLUGIN,
-                    level=level,
-                    path=plugin_file,
-                    description=f"Plugin: {plugin_file.stem}",
-                )
-            )
-        for plugin_file in plugins_path.glob("*.ts"):
-            customizations.append(
-                Customization(
-                    name=plugin_file.stem,
-                    type=CustomizationType.PLUGIN,
-                    level=level,
-                    path=plugin_file,
-                    description=f"Plugin: {plugin_file.stem}",
-                )
-            )
-        return customizations
+        return []
 
     def refresh(self) -> None:
         """Clear cache and force re-discovery."""

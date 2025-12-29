@@ -1,4 +1,4 @@
-"""CombinedPanel widget for Rules/MCPs/Plugins tabs."""
+"""CombinedPanel widget for Rules/MCPs tabs."""
 
 from typing import TYPE_CHECKING, cast
 
@@ -20,7 +20,7 @@ from lazyopencode.models.customization import (
 
 
 class CombinedPanel(Widget):
-    """Panel with tabs for Rules, MCPs, and Plugins."""
+    """Panel with tabs for Rules and MCPs."""
 
     BINDINGS = [
         Binding("tab", "focus_next_panel", "Next Panel", show=False),
@@ -29,7 +29,7 @@ class CombinedPanel(Widget):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("down", "cursor_down", "Down", show=False),
         Binding("up", "cursor_up", "Up", show=False),
-        Binding("g", "cursor_top", "Top", show=False),
+        Binding("home", "cursor_top", "Top", show=False),
         Binding("G", "cursor_bottom", "Bottom", show=False, key_display="shift+g"),
         Binding("enter", "select", "Select", show=False),
         Binding("left", "prev_tab", "Prev Tab", show=False),
@@ -84,7 +84,6 @@ class CombinedPanel(Widget):
     TABS = [
         (CustomizationType.RULES, 4, "Memory"),
         (CustomizationType.MCP, 5, "MCPs"),
-        (CustomizationType.PLUGIN, 6, "Plugins"),
     ]
 
     current_tab: reactive[int] = reactive(0)
@@ -177,7 +176,7 @@ class CombinedPanel(Widget):
         self.border_title = self._render_header()
         self.border_subtitle = self._render_footer()
 
-    def watch_current_tab(self, tab: int) -> None:
+    def watch_current_tab(self, _tab: int) -> None:
         """React to tab changes."""
         self.selected_index = 0
         if self.is_mounted:
@@ -187,7 +186,7 @@ class CombinedPanel(Widget):
             if self.is_active:
                 self._emit_selection_message()
 
-    def watch_selected_index(self, index: int) -> None:
+    def watch_selected_index(self, _index: int) -> None:
         """React to selected index changes."""
         if self.is_mounted:
             self.border_subtitle = self._render_footer()

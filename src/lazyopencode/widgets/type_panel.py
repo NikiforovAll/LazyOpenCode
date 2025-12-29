@@ -30,7 +30,7 @@ class TypePanel(Widget):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("down", "cursor_down", "Down", show=False),
         Binding("up", "cursor_up", "Up", show=False),
-        Binding("g", "cursor_top", "Top", show=False),
+        Binding("home", "cursor_top", "Top", show=False),
         Binding("G", "cursor_bottom", "Bottom", show=False, key_display="shift+g"),
         Binding("enter", "select", "Select", show=False),
     ]
@@ -124,7 +124,6 @@ class TypePanel(Widget):
             CustomizationType.SKILL: "Skills",
             CustomizationType.RULES: "Rules",
             CustomizationType.MCP: "MCPs",
-            CustomizationType.PLUGIN: "Plugins",
         }.get(self.customization_type, self.customization_type.value)
 
     @property
@@ -175,7 +174,7 @@ class TypePanel(Widget):
             if self.is_active:
                 self._emit_selection_message()
 
-    def watch_selected_index(self, index: int) -> None:
+    def watch_selected_index(self, _index: int) -> None:
         """React to selected index changes."""
         if self.is_mounted:
             self.border_subtitle = self._render_footer()
@@ -235,7 +234,7 @@ class TypePanel(Widget):
         except Exception:
             pass
 
-    def on_click(self, event: Click) -> None:
+    def on_click(self, _event: Click) -> None:
         """Handle click - select clicked item and focus panel."""
         self.focus()
 
