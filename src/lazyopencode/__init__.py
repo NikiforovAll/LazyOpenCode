@@ -1,6 +1,9 @@
 """LazyOpenCode - TUI for managing OpenCode customizations."""
 
-__version__ = "0.1.0"
+try:
+    from lazyopencode._version import __version__
+except ImportError:
+    __version__ = "0.0.0+dev"
 
 import argparse
 from pathlib import Path
@@ -11,7 +14,7 @@ from lazyopencode.app import create_app
 def main() -> None:
     """Run the LazyOpenCode application."""
     parser = argparse.ArgumentParser(
-        description="A lazygit-style TUI for visualizing Claude Code customizations",
+        description="A lazygit-style TUI for visualizing OpenCode customizations",
         prog="lazyopencode",
     )
 
