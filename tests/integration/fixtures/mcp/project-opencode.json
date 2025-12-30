@@ -1,0 +1,8 @@
+{
+  "mcp": {
+    "project-server": {
+      "command": "python",
+      "args": ["-m", "server"]
+    }
+  }
+}

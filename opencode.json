@@ -4,6 +4,7 @@
     "permission": {
         "external_directory": "allow",
         "bash": {
+            "bash scripts/check_quality.sh": "allow",
             "git push": "ask",
             "git status": "allow",
             "git diff": "allow",

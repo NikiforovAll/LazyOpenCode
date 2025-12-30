@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lazyopencode.models.customization import ConfigLevel, CustomizationType
 from lazyopencode.services.discovery import ConfigDiscoveryService
@@ -10,9 +11,10 @@ from lazyopencode.services.parsers.command import CommandParser
 from lazyopencode.services.parsers.mcp import MCPParser
 
 
-def test_parse_inline_commands(tmp_path):
+def test_parse_inline_commands(fs: FakeFilesystem):
     # Create a dummy opencode.json
-    config_path = tmp_path / "opencode.json"
+    fs.create_dir("/fake/project")
+    config_path = Path("/fake/project/opencode.json")
     config = {
         "command": {
             "test-cmd": {
@@ -22,7 +24,7 @@ def test_parse_inline_commands(tmp_path):
             }
         }
     }
-    config_path.write_text(json.dumps(config))
+    fs.create_file(config_path, contents=json.dumps(config))
 
     parser = CommandParser()
     customizations = parser.parse_inline_commands(config_path, ConfigLevel.PROJECT)
@@ -53,12 +55,13 @@ def test_parse_inline_commands(tmp_path):
     assert cmd.metadata["agent"] == "test-agent"
 
 
-def test_parse_inline_agents(tmp_path):
-    config_path = tmp_path / "opencode.json"
+def test_parse_inline_agents(fs: FakeFilesystem):
+    fs.create_dir("/fake/project")
+    config_path = Path("/fake/project/opencode.json")
     config = {
         "agent": {"test-agent": {"prompt": "You are a test agent", "mode": "subagent"}}
     }
-    config_path.write_text(json.dumps(config))
+    fs.create_file(config_path, contents=json.dumps(config))
 
     parser = AgentParser()
     customizations = parser.parse_inline_agents(config_path, ConfigLevel.PROJECT)
@@ -75,8 +78,9 @@ def test_parse_inline_agents(tmp_path):
     assert agent.metadata["mode"] == "subagent"
 
 
-def test_jsonc_stripping_with_urls(tmp_path):
-    config_path = tmp_path / "opencode.json"
+def test_jsonc_stripping_with_urls(fs: FakeFilesystem):
+    fs.create_dir("/fake/project")
+    config_path = Path("/fake/project/opencode.json")
     content = """
     {
         "mcp": {
@@ -92,7 +96,7 @@ def test_jsonc_stripping_with_urls(tmp_path):
         }
     }
     """
-    config_path.write_text(content)
+    fs.create_file(config_path, contents=content)
 
     # Test CommandParser
     parser = CommandParser()
@@ -107,21 +111,19 @@ def test_jsonc_stripping_with_urls(tmp_path):
     assert mcps[0].metadata.get("url") == "https://mcp.sentry.dev/mcp"
 
 
-def test_discovery_integration(tmp_path):
-    project_root = tmp_path / "project"
-    global_root = tmp_path / "global"
-    project_root.mkdir()
-    global_root.mkdir()
+def test_discovery_integration(fs: FakeFilesystem):
+    fs.create_dir("/fake/project")
+    fs.create_dir("/fake/global")
 
     config = {
         "command": {"inline-cmd": {"template": "cmd"}},
         "agent": {"inline-agent": {"prompt": "agent"}},
     }
-    (project_root / "opencode.json").write_text(json.dumps(config))
-    (global_root / "opencode.json").write_text(json.dumps(config))
+    fs.create_file(Path("/fake/project/opencode.json"), contents=json.dumps(config))
+    fs.create_file(Path("/fake/global/opencode.json"), contents=json.dumps(config))
 
     discovery = ConfigDiscoveryService(
-        project_root=project_root, global_config_path=global_root
+        project_root=Path("/fake/project"), global_config_path=Path("/fake/global")
     )
     customizations = discovery.discover_all()
 

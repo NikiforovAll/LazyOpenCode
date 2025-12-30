@@ -1,0 +1,8 @@
+{
+  "mcp": {
+    "test-server": {
+      "command": "node",
+      "args": ["path/to/server.js"]
+    }
+  }
+}
