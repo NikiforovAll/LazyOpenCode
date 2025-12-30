@@ -163,8 +163,26 @@ class ConfigDiscoveryService:
     def _discover_skills(
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
-        """Discover skill customizations."""
+        """Discover skill customizations from .opencode/skill/."""
+        customizations = []
+
+        # Discover from standard OpenCode path
         skills_path = base_path / "skill"
+        customizations.extend(self._discover_skills_from_path(skills_path, level))
+
+        # Also discover from Claude-compatible path at project level
+        if level == ConfigLevel.PROJECT:
+            claude_skills_path = self.project_root / ".claude" / "skills"
+            customizations.extend(
+                self._discover_skills_from_path(claude_skills_path, level)
+            )
+
+        return customizations
+
+    def _discover_skills_from_path(
+        self, skills_path: Path, level: ConfigLevel
+    ) -> list[Customization]:
+        """Discover skills from a specific directory path."""
         if not skills_path.exists():
             return []
 
