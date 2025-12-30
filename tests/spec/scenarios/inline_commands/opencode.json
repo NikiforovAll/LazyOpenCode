@@ -1,0 +1,14 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "command": {
+        "lint": {
+            "template": "Run the linting tools:\n!`uv run ruff check src`!",
+            "description": "Run project linting"
+        },
+        "test": {
+            "template": "Run the test suite:\n!`uv run pytest`!",
+            "description": "Run all tests",
+            "agent": "plan"
+        }
+    }
+}

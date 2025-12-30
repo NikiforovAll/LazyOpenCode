@@ -1,0 +1,66 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "model": "{env:OPENCODE_MODEL}",
+    "instructions": [
+        "docs/*.md"
+    ],
+    "permission": {
+        "edit": "ask",
+        "bash": {
+            "git status": "allow",
+            "git diff": "allow",
+            "*": "ask"
+        }
+    },
+    "agent": {
+        "inline-security-auditor": {
+            "description": "Reviews code for security vulnerabilities",
+            "mode": "subagent",
+            "prompt": "{file:./prompts/security-audit.txt}",
+            "tools": {
+                "write": false,
+                "edit": false
+            }
+        }
+    },
+    "command": {
+        "inline-lint": {
+            "template": "Run the project linting script.\n!`bash ./scripts/fake-lint.sh`!",
+            "description": "Run project-specific linting",
+            "agent": "plan"
+        },
+        "inline-echo": {
+            "template": "Echo the provided arguments: $ARGUMENTS",
+            "description": "A simple echo command"
+        }
+    },
+    "mcp": {
+        "sqlite": {
+            "type": "local",
+            "command": [
+                "uvx",
+                "mcp-server-sqlite",
+                "--db-path",
+                "./data/test.db"
+            ],
+            "enabled": true
+        },
+        "github": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "environment": {
+                "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
+            }
+        },
+        "sentry": {
+            "type": "remote",
+            "url": "https://mcp.sentry.dev/mcp",
+            "oauth": {},
+            "enabled": false
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "agent": {
+        "custom-agent": {
+            "prompt": "{file:./prompts/agent.txt}",
+            "description": "Agent with external prompt file",
+            "mode": "subagent"
+        }
+    },
+    "command": {
+        "custom-cmd": {
+            "template": "{file:./templates/cmd.txt}",
+            "description": "Command with external template file"
+        }
+    }
+}

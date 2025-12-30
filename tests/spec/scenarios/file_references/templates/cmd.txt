@@ -1,0 +1,7 @@
+Execute the following steps:
+
+1. Check the current status
+2. Run the required operations
+3. Report the results
+
+Use !`bash command`! syntax for shell commands.

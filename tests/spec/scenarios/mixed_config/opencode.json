@@ -1,0 +1,22 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "command": {
+        "inline-cmd": {
+            "template": "This is an inline command",
+            "description": "Inline command from opencode.json"
+        }
+    },
+    "agent": {
+        "inline-agent": {
+            "prompt": "You are an inline agent defined in opencode.json",
+            "description": "Inline agent",
+            "mode": "subagent"
+        }
+    },
+    "mcp": {
+        "sqlite": {
+            "type": "local",
+            "command": ["uvx", "mcp-server-sqlite", "--db-path", "./data/test.db"]
+        }
+    }
+}
