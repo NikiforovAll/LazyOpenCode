@@ -26,34 +26,36 @@ pip install lazyopencode
 
 ## Keyboard Shortcuts
 
-| Key       | Action         |
-| --------- | -------------- |
-| `q`       | Quit           |
-| `1`       | Commands panel |
-| `2`       | Agents panel   |
-| `3`       | Skills panel   |
-| `4`       | Rules panel    |
-| `5`       | MCPs panel     |
-| `6`       | Plugins panel  |
-| `j` / `↓` | Move down      |
-| `k` / `↑` | Move up        |
-| `Tab`     | Next panel     |
-| `e`       | Edit selected  |
-| `ctrl`+`u` | User Config    |
-| `?`       | Help           |
+| Key        | Action           |
+| ---------- | ---------------- |
+| `j` / `↓`  | Move down        |
+| `k` / `↑`  | Move up          |
+| `Tab`      | Next panel       |
+| `[` / `]`  | Prev/Next view   |
+| `1`-`7`    | Jump to panel    |
+| `a`        | All filter       |
+| `g`        | Global filter    |
+| `p`        | Project filter   |
+| `/`        | Search           |
+| `e`        | Edit selected    |
+| `r`        | Refresh          |
+| `ctrl+u`   | User Config      |
+| `?`        | Help             |
+| `q`        | Quit             |
 
 ## Configuration Paths
 
 LazyOpenCode discovers customizations from:
 
-| Type     | Global                         | Project              |
-| -------- | ------------------------------ | -------------------- |
-| Commands | `~/.config/opencode/command/`  | `.opencode/command/` |
-| Agents   | `~/.config/opencode/agent/`    | `.opencode/agent/`   |
-| Skills   | `~/.config/opencode/skill/`    | `.opencode/skill/`   |
-| Rules    | `~/.config/opencode/AGENTS.md` | `AGENTS.md`          |
-| MCPs     | `opencode.json`                | `opencode.json`      |
-| Plugins  | `~/.config/opencode/plugin/`   | `.opencode/plugin/`  |
+| Type     | Global                             | Project              |
+| -------- | ---------------------------------- | -------------------- |
+| Commands | `~/.config/opencode/command/`      | `.opencode/command/` |
+| Agents   | `~/.config/opencode/agent/`        | `.opencode/agent/`   |
+| Skills   | `~/.config/opencode/skill/`        | `.opencode/skill/`   |
+| Rules    | `~/.config/opencode/AGENTS.md`     | `AGENTS.md`          |
+| MCPs     | `~/.config/opencode/opencode.json` | `opencode.json`      |
+| Tools    | `~/.config/opencode/tool/`         | `.opencode/tool/`    |
+| Plugins  | `~/.config/opencode/plugin/`       | `.opencode/plugin/`  |
 
 ## Inspired By
 

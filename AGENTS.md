@@ -50,7 +50,7 @@ src/lazyopencode/
 ├── models/          # Data models (Customization, ConfigLevel, etc.)
 ├── services/        # Business logic
 │   ├── discovery.py # Finds customizations on disk
-│   ├── filter.py    # Filters by level/query
+│   ├── gitignore_filter.py # Gitignore-aware filtering
 │   └── parsers/     # Type-specific parsers
 ├── widgets/         # Textual UI components
 ├── mixins/          # App functionality mixins
@@ -99,7 +99,7 @@ The application discovers customizations from these locations:
 
 ### Services
 - `ConfigDiscoveryService` - Scans filesystem, uses parsers
-- `FilterService` - Filters by level and search query
+- `GitignoreFilter` - Filters paths using gitignore rules
 - `ICustomizationParser` - Protocol for type-specific parsers
 
 ### Widgets
@@ -111,7 +111,7 @@ The application discovers customizations from these locations:
 
 ### Mixins
 - `NavigationMixin` - Panel focus, cursor movement
-- `FilterMixin` - Level filters, search
+- `FilteringMixin` - Level filters, search
 - `HelpMixin` - Help overlay
 
 ## Testing
@@ -162,12 +162,3 @@ uv run pytest tests/unit/test_parsers.py
 2. Add styles to `styles/app.tcss`
 3. Compose in `app.py`
 
-## Planning Documents
-
-See `_plans/` directory for detailed specifications:
-- `00-overview.md` - Project overview
-- `01-architecture.md` - Architecture decisions
-- `02-customization-types.md` - OpenCode customization mapping
-- `03-implementation-phases.md` - Implementation plan
-- `04-file-structure.md` - File structure
-- `05-agents-md-template.md` - This template
