@@ -5,7 +5,7 @@ A keyboard-driven TUI for visualizing and managing OpenCode customizations.
 ## Environment Rules
 - **OS**: Windows (Git Bash). Use forward slashes `/` and `/c/` prefix for absolute paths.
 - **Search**: `rg` and `fd` are installed. Use them for fast searching.
-- **Quality Gates**: Always run quality gates before asking the user to commit changes. Use `/run-quality-gates` command or `scripts/check_quality.sh`.
+- **Quality Gates**: Always run quality gates before asking the user to commit changes. Use the `quality-gates` skill by calling the Skill tool. Do NOT run `uv run ruff`, `uv run mypy`, or other individual linting tools directly - always use the skill instead.
 - **TUI Verification**: Do NOT run `uv run lazyopencode` to verify the application. It is a TUI and output cannot be captured effectively. Use unit tests or static analysis instead.
 
 ## Project Overview
@@ -21,7 +21,7 @@ A keyboard-driven TUI for visualizing and managing OpenCode customizations.
 - [x] **Foundation**: Project structure, dependencies, CLI entry point
 - [x] **Models**: Customization types, data classes
 - [x] **Widgets**: Type panels, combined panel, detail pane, status bar, footer
-- [x] **Parsers**: Full support for Commands, Agents, Skills, Rules, MCPs, Plugins
+- [x] **Parsers**: Full support for Commands, Agents, Skills, Rules, MCPs, Tools, Plugins
 - [x] **Navigation**: Vim-like navigation (j/k), tab switching, number shortcuts
 - [x] **Filtering**: Filter by Global/Project, Search overlay
 - [x] **Theme**: Gruvbox theme (default) matching LazyClaude style
@@ -36,9 +36,8 @@ uv run lazyopencode
 # Run tests
 uv run pytest
 
-# Lint and format
-uv run ruff check .
-uv run ruff format .
+# Run quality gates (linting, formatting, type checking, tests)
+bash scripts/check_quality.sh
 ```
 
 ## Directory Structure
@@ -88,6 +87,7 @@ The application discovers customizations from these locations:
 | Skills | `~/.config/opencode/skill/*/SKILL.md` | `.opencode/skill/*/SKILL.md` |
 | Rules | `~/.config/opencode/AGENTS.md` | `AGENTS.md` |
 | MCPs | `~/.config/opencode/opencode.json` | `opencode.json` |
+| Tools | `~/.config/opencode/tool/*.ts` | `.opencode/tool/*.ts` |
 | Plugins | `~/.config/opencode/plugin/` | `.opencode/plugin/` |
 
 ## Key Components
@@ -95,7 +95,7 @@ The application discovers customizations from these locations:
 ### Models (`models/customization.py`)
 - `Customization` - Core data object for any customization
 - `ConfigLevel` - Enum: GLOBAL, PROJECT
-- `CustomizationType` - Enum: COMMAND, AGENT, SKILL, RULES, MCP, PLUGIN
+- `CustomizationType` - Enum: COMMAND, AGENT, SKILL, RULES, MCP, TOOL, PLUGIN
 
 ### Services
 - `ConfigDiscoveryService` - Scans filesystem, uses parsers

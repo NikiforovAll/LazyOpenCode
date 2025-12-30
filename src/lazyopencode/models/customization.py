@@ -51,6 +51,7 @@ class CustomizationType(Enum):
     SKILL = "skill"
     RULES = "rules"
     MCP = "mcp"
+    TOOL = "tool"
     PLUGIN = "plugin"
 
     @property
@@ -74,6 +75,8 @@ class CustomizationType(Enum):
             CustomizationType.SKILL: "3",
             CustomizationType.RULES: "4",
             CustomizationType.MCP: "5",
+            CustomizationType.TOOL: "6",
+            CustomizationType.PLUGIN: "7",
         }
         return mapping[self]
 

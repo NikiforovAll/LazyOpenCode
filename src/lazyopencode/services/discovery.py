@@ -1,5 +1,6 @@
 """Configuration discovery service."""
 
+import json
 from pathlib import Path
 
 from lazyopencode.models.customization import (
@@ -8,11 +9,14 @@ from lazyopencode.models.customization import (
     CustomizationType,
 )
 from lazyopencode.services.gitignore_filter import GitignoreFilter
+from lazyopencode.services.parsers import read_file_safe, strip_jsonc_comments
 from lazyopencode.services.parsers.agent import AgentParser
 from lazyopencode.services.parsers.command import CommandParser
 from lazyopencode.services.parsers.mcp import MCPParser
+from lazyopencode.services.parsers.plugin import PluginParser
 from lazyopencode.services.parsers.rules import RulesParser
 from lazyopencode.services.parsers.skill import SkillParser
+from lazyopencode.services.parsers.tool import ToolParser
 
 
 class ConfigDiscoveryService:
@@ -43,6 +47,8 @@ class ConfigDiscoveryService:
             ),
             CustomizationType.RULES: RulesParser(),
             CustomizationType.MCP: MCPParser(),
+            CustomizationType.TOOL: ToolParser(),
+            CustomizationType.PLUGIN: PluginParser(),
         }
         self._cache: list[Customization] | None = None
 
@@ -56,7 +62,7 @@ class ConfigDiscoveryService:
         Discover all customizations from global and project levels.
 
         Returns:
-            List of all discovered customizations
+            List of all discovered customizations (de-duplicated by path)
         """
         if self._cache is not None:
             return self._cache
@@ -69,8 +75,22 @@ class ConfigDiscoveryService:
         # Discover from project config
         customizations.extend(self._discover_level(ConfigLevel.PROJECT))
 
-        self._cache = customizations
-        return customizations
+        # De-duplicate by (type, name, level, resolved_path) tuple
+        # This avoids removing items that share a source file (like multiple
+        # inline definitions from the same opencode.json)
+        seen: set[tuple] = set()
+        unique: list[Customization] = []
+        for c in customizations:
+            # Create a unique key for this customization
+            # For file-based items, use the resolved path
+            # For inline items, use (type, name, level) to avoid duplicates
+            key = (c.type, c.name, c.level, str(c.path.resolve()))
+            if key not in seen:
+                seen.add(key)
+                unique.append(c)
+
+        self._cache = unique
+        return unique
 
     def _discover_level(self, level: ConfigLevel) -> list[Customization]:
         """Discover customizations at a specific level."""
@@ -95,8 +115,17 @@ class ConfigDiscoveryService:
         # Discover rules (AGENTS.md)
         customizations.extend(self._discover_rules(level))
 
+        # Discover instruction files from opencode.json
+        customizations.extend(self._discover_instructions(level))
+
         # Discover MCPs from opencode.json
         customizations.extend(self._discover_mcps(level))
+
+        # Discover tools
+        customizations.extend(self._discover_tools(base_path, level))
+
+        # Discover plugins
+        customizations.extend(self._discover_plugins(base_path, level))
 
         return customizations
 
@@ -225,6 +254,88 @@ class ConfigDiscoveryService:
             return parser.parse_mcps(config_path, level)
 
         return []
+
+    def _discover_tools(
+        self, base_path: Path, level: ConfigLevel
+    ) -> list[Customization]:
+        """Discover tool customizations from .opencode/tool/."""
+        tools_path = base_path / "tool"
+        if not tools_path.exists():
+            return []
+
+        customizations = []
+        parser = self._parsers[CustomizationType.TOOL]
+
+        for tool_file in tools_path.iterdir():
+            if tool_file.is_file() and parser.can_parse(tool_file):
+                customizations.append(parser.parse(tool_file, level))
+
+        return customizations
+
+    def _discover_plugins(
+        self, base_path: Path, level: ConfigLevel
+    ) -> list[Customization]:
+        """Discover plugin customizations from .opencode/plugin/."""
+        plugins_path = base_path / "plugin"
+        if not plugins_path.exists():
+            return []
+
+        customizations = []
+        parser = self._parsers[CustomizationType.PLUGIN]
+
+        for plugin_file in plugins_path.iterdir():
+            if plugin_file.is_file() and parser.can_parse(plugin_file):
+                customizations.append(parser.parse(plugin_file, level))
+
+        return customizations
+
+    def _discover_instructions(self, level: ConfigLevel) -> list[Customization]:
+        """Discover instruction files from opencode.json instructions field.
+
+        Args:
+            level: Configuration level (GLOBAL or PROJECT)
+
+        Returns:
+            List of instruction file customizations
+        """
+        if level == ConfigLevel.GLOBAL:
+            config_path = self.global_config_path / "opencode.json"
+            base_dir = self.global_config_path
+        else:
+            config_path = self.project_root / "opencode.json"
+            base_dir = self.project_root
+
+        if not config_path.exists():
+            return []
+
+        # Parse opencode.json
+        content, error = read_file_safe(config_path)
+        if error or not content:
+            return []
+
+        try:
+            clean_content = strip_jsonc_comments(content)
+            config = json.loads(clean_content)
+        except (json.JSONDecodeError, Exception):
+            return []
+
+        instructions = config.get("instructions", [])
+        if not instructions:
+            return []
+
+        customizations = []
+        parser = self._parsers[CustomizationType.RULES]
+
+        for pattern in instructions:
+            # Resolve glob pattern relative to base_dir
+            matched_files = sorted(base_dir.glob(pattern))
+            for matched_file in matched_files:
+                if matched_file.is_file() and isinstance(parser, RulesParser):
+                    customizations.append(
+                        parser.parse_instruction(matched_file, base_dir, level)
+                    )
+
+        return customizations
 
     def refresh(self) -> None:
         """Clear cache and force re-discovery."""

@@ -136,6 +136,13 @@ def project_config_path(fake_project_root: Path, fs: FakeFilesystem) -> Path:
         read_only=False,
     )
 
+    # Add docs directory with instruction files
+    fs.add_real_directory(
+        FIXTURES_DIR / "project" / "docs",
+        target_path=fake_project_root / "docs",
+        read_only=False,
+    )
+
     return project_opencode
 
 

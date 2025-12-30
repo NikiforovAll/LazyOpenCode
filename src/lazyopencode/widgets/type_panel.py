@@ -145,8 +145,10 @@ class TypePanel(Widget):
             CustomizationType.COMMAND: "Commands",
             CustomizationType.AGENT: "Agents",
             CustomizationType.SKILL: "Skills",
-            CustomizationType.RULES: "Rules",
+            CustomizationType.RULES: "Agent Memory",
             CustomizationType.MCP: "MCPs",
+            CustomizationType.TOOL: "Tools",
+            CustomizationType.PLUGIN: "Plugins",
         }.get(self.customization_type, self.customization_type.value)
 
     @property

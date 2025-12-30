@@ -55,14 +55,12 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         self._customizations: list[Customization] = []
         self._level_filter: ConfigLevel | None = None
         self._search_query: str = ""
-        self._panels: list[TypePanel] = []
-        self._combined_panel: CombinedPanel | None = None
+        self._panels: list[TypePanel | CombinedPanel] = []
         self._status_panel: StatusPanel | None = None
         self._main_pane: MainPane | None = None
         self._filter_input: FilterInput | None = None
         self._app_footer: AppFooter | None = None
-        self._last_focused_panel: TypePanel | None = None
-        self._last_focused_combined: bool = False
+        self._last_focused_panel: TypePanel | CombinedPanel | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
@@ -70,21 +68,40 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
             self._status_panel = StatusPanel(id="status-panel")
             yield self._status_panel
 
-            # Create panels for Commands, Agents, Skills
-            separate_types = [
-                CustomizationType.COMMAND,
-                CustomizationType.AGENT,
-                CustomizationType.SKILL,
-            ]
-            for i, ctype in enumerate(separate_types, start=1):
-                panel = TypePanel(ctype, id=f"panel-{ctype.value}")
-                panel.panel_number = i
-                self._panels.append(panel)
-                yield panel
+            # [1]+[2] Combined Panel: Commands, Agents
+            cp1 = CombinedPanel(
+                tabs=[
+                    (CustomizationType.COMMAND, 1, "Commands"),
+                    (CustomizationType.AGENT, 2, "Agents"),
+                ],
+                id="panel-combined-1",
+            )
+            self._panels.append(cp1)
+            yield cp1
 
-            # Combined panel for Rules, MCPs, Plugins
-            self._combined_panel = CombinedPanel(id="panel-combined")
-            yield self._combined_panel
+            # [3] Type Panel: Skills
+            tp_skills = TypePanel(CustomizationType.SKILL, id="panel-skill")
+            tp_skills.panel_number = 3
+            self._panels.append(tp_skills)
+            yield tp_skills
+
+            # [4] Type Panel: Agent Memory (Rules)
+            tp_rules = TypePanel(CustomizationType.RULES, id="panel-rules")
+            tp_rules.panel_number = 4
+            self._panels.append(tp_rules)
+            yield tp_rules
+
+            # [5]+[6]+[7] Combined Panel: MCPs, Tools, Plugins
+            cp2 = CombinedPanel(
+                tabs=[
+                    (CustomizationType.MCP, 5, "MCPs"),
+                    (CustomizationType.TOOL, 6, "Tools"),
+                    (CustomizationType.PLUGIN, 7, "Plugins"),
+                ],
+                id="panel-combined-2",
+            )
+            self._panels.append(cp2)
+            yield cp2
 
         self._main_pane = MainPane(id="main-pane")
         yield self._main_pane
@@ -132,8 +149,6 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         customizations = self._get_filtered_customizations()
         for panel in self._panels:
             panel.set_customizations(customizations)
-        if self._combined_panel:
-            self._combined_panel.set_customizations(customizations)
 
     def _get_filtered_customizations(self) -> list[Customization]:
         """Get customizations filtered by current level and search query."""
@@ -158,7 +173,6 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Handle drill down into a customization."""
         if self._main_pane:
             self._last_focused_panel = self._get_focused_panel()
-            self._last_focused_combined = False
             self._main_pane.customization = message.customization
             self._main_pane.focus()
 
@@ -179,8 +193,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
     def on_combined_panel_drill_down(self, message: CombinedPanel.DrillDown) -> None:
         """Handle drill down from the combined panel."""
         if self._main_pane:
-            self._last_focused_panel = None
-            self._last_focused_combined = True
+            self._last_focused_panel = self._get_focused_panel()
             self._main_pane.customization = message.customization
             self._main_pane.focus()
 
@@ -252,8 +265,6 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
 
         if panel:
             customization = panel.selected_customization
-        elif self._combined_panel and self._combined_panel.has_focus:
-            customization = self._combined_panel.selected_customization
 
         if not customization:
             self.notify("No customization selected", severity="warning")

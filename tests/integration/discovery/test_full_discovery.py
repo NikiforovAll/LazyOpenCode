@@ -54,10 +54,10 @@ class TestFullDiscovery:
         # Commands: 2 (1 global + 1 project)
         # Agents: 2 (1 global + 1 project)
         # Skills: 2 (1 global + 1 project)
-        # Rules: 2 (1 global + 1 project)
+        # Rules: 3 (1 global + 1 project AGENTS.md + 1 project instruction file)
         # MCPs: 2 (1 global + 1 project)
-        # Total: 10
-        assert len(all_customizations) == 10
+        # Total: 11
+        assert len(all_customizations) == 11
 
     def test_by_type_filters_correctly(
         self,
@@ -87,7 +87,9 @@ class TestFullDiscovery:
 
         rules = service.by_type(CustomizationType.RULES)
         assert all(r.type == CustomizationType.RULES for r in rules)
-        assert len(rules) == 2
+        assert (
+            len(rules) == 3
+        )  # 1 global + 1 project AGENTS.md + 1 project instruction file
 
         mcps = service.by_type(CustomizationType.MCP)
         assert all(m.type == CustomizationType.MCP for m in mcps)
@@ -112,7 +114,7 @@ class TestFullDiscovery:
 
         project_customizations = service.by_level(ConfigLevel.PROJECT)
         assert all(c.level == ConfigLevel.PROJECT for c in project_customizations)
-        assert len(project_customizations) == 5  # 1 of each type
+        assert len(project_customizations) == 6  # 1 of each type + 1 instruction file
 
     def test_caching_works(
         self,
@@ -129,7 +131,7 @@ class TestFullDiscovery:
 
         # First call should populate cache
         first_call = service.discover_all()
-        assert len(first_call) == 10
+        assert len(first_call) == 11
 
         # Second call should return same list (from cache)
         second_call = service.discover_all()
@@ -150,14 +152,14 @@ class TestFullDiscovery:
 
         # First discovery
         first_call = service.discover_all()
-        assert len(first_call) == 10
+        assert len(first_call) == 11
 
         # Refresh cache
         service.refresh()
 
         # Second discovery should be a new list
         second_call = service.discover_all()
-        assert len(second_call) == 10
+        assert len(second_call) == 11
         assert first_call is not second_call  # Different objects
 
     def test_customization_properties(

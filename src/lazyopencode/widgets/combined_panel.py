@@ -82,10 +82,12 @@ class CombinedPanel(Widget):
     }
     """
 
-    # Tab configuration: (type, panel_number, label)
-    TABS = [
+    # Default tab configuration (can be overridden in __init__)
+    DEFAULT_TABS = [
         (CustomizationType.RULES, 4, "Memory"),
         (CustomizationType.MCP, 5, "MCPs"),
+        (CustomizationType.TOOL, 6, "Tools"),
+        (CustomizationType.PLUGIN, 7, "Plugins"),
     ]
 
     current_tab: reactive[int] = reactive(0)
@@ -108,21 +110,30 @@ class CombinedPanel(Widget):
 
     def __init__(
         self,
+        tabs: list[tuple[CustomizationType, int, str]] | None = None,
         name: str | None = None,
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
-        """Initialize CombinedPanel."""
+        """Initialize CombinedPanel.
+
+        Args:
+            tabs: List of (type, number, label) tuples.
+            name: The name of the widget.
+            id: The ID of the widget in the DOM.
+            classes: The CSS classes of the widget.
+        """
         super().__init__(name=name, id=id, classes=classes)
+        self.tabs = tabs or self.DEFAULT_TABS
         self.can_focus = True
         self._customizations_by_type: dict[CustomizationType, list[Customization]] = {
-            t: [] for t, _, _ in self.TABS
+            t: [] for t, _, _ in self.tabs
         }
 
     @property
     def current_type(self) -> CustomizationType:
         """Get the current tab's customization type."""
-        return self.TABS[self.current_tab][0]
+        return self.tabs[self.current_tab][0]
 
     @property
     def current_items(self) -> list[Customization]:
@@ -152,7 +163,7 @@ class CombinedPanel(Widget):
     def _render_header(self) -> str:
         """Render the panel header with tabs."""
         parts = []
-        for i, (_, num, label) in enumerate(self.TABS):
+        for i, (_, num, label) in enumerate(self.tabs):
             if i == self.current_tab:
                 parts.append(f"[b][{num}]-{label}[/b]")
             else:
@@ -278,11 +289,11 @@ class CombinedPanel(Widget):
 
     def action_next_tab(self) -> None:
         """Switch to next tab."""
-        self.current_tab = (self.current_tab + 1) % len(self.TABS)
+        self.current_tab = (self.current_tab + 1) % len(self.tabs)
 
     def action_prev_tab(self) -> None:
         """Switch to previous tab."""
-        self.current_tab = (self.current_tab - 1) % len(self.TABS)
+        self.current_tab = (self.current_tab - 1) % len(self.tabs)
 
     def action_select(self) -> None:
         """Drill down into selected customization."""
@@ -291,7 +302,7 @@ class CombinedPanel(Widget):
 
     def action_focus_next_panel(self) -> None:
         """Cycle through tabs, then delegate to app when on last tab."""
-        if self.current_tab < len(self.TABS) - 1:
+        if self.current_tab < len(self.tabs) - 1:
             self.current_tab += 1
         else:
             cast("LazyOpenCode", self.app).action_focus_next_panel()
@@ -305,7 +316,7 @@ class CombinedPanel(Widget):
 
     def set_customizations(self, customizations: list[Customization]) -> None:
         """Set the customizations for all tabs."""
-        for ctype, _, _ in self.TABS:
+        for ctype, _, _ in self.tabs:
             self._customizations_by_type[ctype] = [
                 c for c in customizations if c.type == ctype
             ]
@@ -330,5 +341,5 @@ class CombinedPanel(Widget):
 
     def switch_to_tab(self, tab_index: int) -> None:
         """Switch to a specific tab by index."""
-        if 0 <= tab_index < len(self.TABS):
+        if 0 <= tab_index < len(self.tabs):
             self.current_tab = tab_index

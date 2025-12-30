@@ -24,25 +24,6 @@ Or install with pip:
 pip install lazyopencode
 ```
 
-## Development
-
-```bash
-# Clone and install
-git clone https://github.com/yourusername/lazyopencode
-cd lazyopencode
-uv sync
-
-# Run
-uv run lazyopencode
-
-# Run tests
-uv run pytest
-
-# Lint and format
-uv run ruff check .
-uv run ruff format .
-```
-
 ## Keyboard Shortcuts
 
 | Key       | Action         |
@@ -79,6 +60,26 @@ LazyOpenCode discovers customizations from:
 - [LazyClaude](https://github.com/NikiforovAll/lazyclaude) - Similar TUI for Claude Code
 - [Lazygit](https://github.com/jesseduffield/lazygit) - Keyboard-driven Git TUI
 - [OpenCode](https://opencode.ai) - AI coding agent
+
+
+## Development
+
+```bash
+# Clone and install
+git clone https://github.com/yourusername/lazyopencode
+cd lazyopencode
+uv sync
+
+# Run
+uv run lazyopencode
+
+# Run tests
+uv run pytest
+
+# Lint and format
+uv run ruff check .
+uv run ruff format .
+```
 
 ## License
 
