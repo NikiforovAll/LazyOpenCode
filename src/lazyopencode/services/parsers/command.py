@@ -13,6 +13,7 @@ from lazyopencode.services.parsers import (
     build_synthetic_markdown,
     parse_frontmatter,
     read_file_safe,
+    resolve_file_references,
     strip_jsonc_comments,
 )
 
@@ -68,6 +69,10 @@ class CommandParser(ICustomizationParser):
                 # Create a copy to avoid mutating the original
                 metadata = cmd_config.copy()
                 template = metadata.pop("template", "")
+
+                # Resolve {file:...} references in template
+                template = resolve_file_references(template, path.parent)
+
                 description = metadata.get("description")
 
                 markdown_content = build_synthetic_markdown(metadata, template)

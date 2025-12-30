@@ -124,3 +124,29 @@ def read_file_safe(path: Path) -> tuple[str | None, str | None]:
         return None, f"Failed to read file: {e}"
     except UnicodeDecodeError as e:
         return None, f"Encoding error: {e}"
+
+
+def resolve_file_references(value: str, config_dir: Path) -> str:
+    """
+    Resolve {file:./path} patterns to actual file contents.
+
+    Args:
+        value: String potentially containing {file:...} patterns
+        config_dir: Directory of the config file (for relative path resolution)
+
+    Returns:
+        String with file references replaced by contents or error indicator
+    """
+    pattern = r"\{file:([^}]+)\}"
+
+    def replace(match: re.Match) -> str:
+        file_path = match.group(1)
+        resolved = (config_dir / file_path).resolve()
+        if resolved.exists() and resolved.is_file():
+            content, error = read_file_safe(resolved)
+            if content and not error:
+                return content
+            return f"[FILE READ ERROR: {file_path}]"
+        return f"[FILE NOT FOUND: {file_path}]"
+
+    return re.sub(pattern, replace, value)

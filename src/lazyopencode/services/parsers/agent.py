@@ -13,6 +13,7 @@ from lazyopencode.services.parsers import (
     build_synthetic_markdown,
     parse_frontmatter,
     read_file_safe,
+    resolve_file_references,
     strip_jsonc_comments,
 )
 
@@ -67,6 +68,10 @@ class AgentParser(ICustomizationParser):
 
                 metadata = agent_config.copy()
                 prompt = metadata.pop("prompt", "")
+
+                # Resolve {file:...} references in prompt
+                prompt = resolve_file_references(prompt, path.parent)
+
                 description = metadata.get("description")
 
                 markdown_content = build_synthetic_markdown(metadata, prompt)

@@ -150,3 +150,112 @@ def test_parse_reference_config():
     assert any(a.name == "inline-security-auditor" for a in agents)
     security_agent = next(a for a in agents if a.name == "inline-security-auditor")
     assert "prompt" not in security_agent.metadata
+
+
+def test_resolve_file_references(fs: FakeFilesystem):
+    """Test {file:...} pattern resolution in agents."""
+    fs.create_dir("/fake/project/prompts")
+    fs.create_file(
+        "/fake/project/prompts/test.txt",
+        contents="You are a test agent.\nBe helpful.",
+    )
+    fs.create_file(
+        "/fake/project/opencode.json",
+        contents=json.dumps(
+            {
+                "agent": {
+                    "test-agent": {
+                        "prompt": "{file:./prompts/test.txt}",
+                        "description": "Test agent",
+                    }
+                }
+            }
+        ),
+    )
+
+    parser = AgentParser()
+    agents = parser.parse_inline_agents(
+        Path("/fake/project/opencode.json"), ConfigLevel.PROJECT
+    )
+
+    assert len(agents) == 1
+    content = agents[0].content or ""
+    assert "You are a test agent." in content
+    assert "Be helpful." in content
+    assert "{file:" not in content
+
+
+def test_resolve_file_references_missing_file(fs: FakeFilesystem):
+    """Test {file:...} with missing file shows indicator."""
+    fs.create_dir("/fake/project")
+    fs.create_file(
+        "/fake/project/opencode.json",
+        contents=json.dumps(
+            {
+                "agent": {
+                    "test-agent": {
+                        "prompt": "{file:./missing.txt}",
+                        "description": "Test",
+                    }
+                }
+            }
+        ),
+    )
+
+    parser = AgentParser()
+    agents = parser.parse_inline_agents(
+        Path("/fake/project/opencode.json"), ConfigLevel.PROJECT
+    )
+
+    assert len(agents) == 1
+    content = agents[0].content or ""
+    assert "[FILE NOT FOUND: ./missing.txt]" in content
+
+
+def test_resolve_file_references_in_commands(fs: FakeFilesystem):
+    """Test {file:...} resolution in command templates."""
+    fs.create_dir("/fake/project/templates")
+    fs.create_file(
+        "/fake/project/templates/lint.txt", contents="Run linting: !`bash ./lint.sh`!"
+    )
+    fs.create_file(
+        "/fake/project/opencode.json",
+        contents=json.dumps(
+            {
+                "command": {
+                    "lint": {
+                        "template": "{file:./templates/lint.txt}",
+                        "description": "Lint code",
+                    }
+                }
+            }
+        ),
+    )
+
+    parser = CommandParser()
+    commands = parser.parse_inline_commands(
+        Path("/fake/project/opencode.json"), ConfigLevel.PROJECT
+    )
+
+    assert len(commands) == 1
+    content = commands[0].content or ""
+    assert "Run linting:" in content
+    assert "{file:" not in content
+
+
+def test_reference_config_file_resolution():
+    """Test reference config resolves file references."""
+    ref_path = Path("reference-customizations/opencode.json")
+    if not ref_path.exists():
+        pytest.skip("Reference config not found")
+
+    parser = AgentParser()
+    agents = parser.parse_inline_agents(ref_path, ConfigLevel.PROJECT)
+
+    security_agent = next(
+        (a for a in agents if a.name == "inline-security-auditor"), None
+    )
+    assert security_agent is not None
+    content = security_agent.content or ""
+    assert "{file:" not in content
+    assert "security auditor" in content.lower()
