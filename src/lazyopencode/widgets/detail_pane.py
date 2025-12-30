@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 from rich.console import Group, RenderableType
 from rich.syntax import Syntax
@@ -12,6 +13,9 @@ from textual.widget import Widget
 from textual.widgets import Static
 
 from lazyopencode.models.customization import Customization
+
+if TYPE_CHECKING:
+    from lazyopencode.app import LazyOpenCode
 
 TEXTUAL_TO_PYGMENTS_THEME: dict[str, str] = {
     "catppuccin-latte": "default",
@@ -46,6 +50,7 @@ class MainPane(Widget):
         Binding(
             "G", "scroll_bottom", "Scroll bottom", show=False, key_display="shift+g"
         ),
+        Binding("escape", "go_back", "Go Back", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -266,3 +271,7 @@ class MainPane(Widget):
     def action_scroll_page_up(self) -> None:
         """Scroll page up."""
         self.scroll_page_up(animate=False)
+
+    def action_go_back(self) -> None:
+        """Go back to the previously focused panel."""
+        cast("LazyOpenCode", self.app).action_go_back_from_main_pane()

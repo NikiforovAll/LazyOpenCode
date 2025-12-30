@@ -139,3 +139,14 @@ class NavigationMixin:
             app._combined_panel.action_next_tab()
         elif app._main_pane:
             app._main_pane.action_next_view()
+
+    def action_go_back_from_main_pane(self) -> None:
+        """Return focus to the panel we drilled down from."""
+        app = cast("LazyOpenCode", self)
+        if app._last_focused_combined and app._combined_panel:
+            app._combined_panel.focus()
+        elif app._last_focused_panel:
+            app._last_focused_panel.focus()
+        elif app._panels:
+            # Fallback to first panel
+            app._panels[0].focus()
