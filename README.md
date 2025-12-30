@@ -2,7 +2,7 @@
 
 A keyboard-driven TUI for managing OpenCode customizations.
 
-<!-- ![LazyOpenCode Screenshot](docs/screenshot.png) -->
+![LazyOpenCode Screenshot](artifacts/demo.png)
 
 ## Features
 
