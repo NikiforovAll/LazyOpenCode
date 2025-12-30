@@ -167,7 +167,9 @@ class MainPane(Widget):
                 return "[dim italic]Empty[/]"
 
         suffix = self.customization.path.suffix.lower()
-        if suffix == ".md":
+
+        # Check if content has frontmatter (for both .md files and synthetic markdown)
+        if suffix == ".md" or content.startswith("---\n"):
             return self._render_markdown_with_frontmatter(content)
 
         lexer_map = {

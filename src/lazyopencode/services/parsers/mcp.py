@@ -8,7 +8,11 @@ from lazyopencode.models.customization import (
     Customization,
     CustomizationType,
 )
-from lazyopencode.services.parsers import ICustomizationParser, read_file_safe
+from lazyopencode.services.parsers import (
+    ICustomizationParser,
+    read_file_safe,
+    strip_jsonc_comments,
+)
 
 
 class MCPParser(ICustomizationParser):
@@ -40,16 +44,7 @@ class MCPParser(ICustomizationParser):
 
         customizations = []
         try:
-            # Handle JSONC (simple comment stripping)
-            lines = []
-            for line in content.split("\n"):
-                stripped = line.strip()
-                if not stripped.startswith("//"):
-                    # Remove inline comments (naive)
-                    if "//" in line and '"' not in line.split("//")[0]:
-                        line = line.split("//")[0]
-                    lines.append(line)
-            clean_content = "\n".join(lines)
+            clean_content = strip_jsonc_comments(content)
             config = json.loads(clean_content)
 
             mcps = config.get("mcp", {})

@@ -79,9 +79,11 @@ class ConfigDiscoveryService:
 
         # Discover commands
         customizations.extend(self._discover_commands(base_path, level))
+        customizations.extend(self._discover_inline_commands(level))
 
         # Discover agents
         customizations.extend(self._discover_agents(base_path, level))
+        customizations.extend(self._discover_inline_agents(level))
 
         # Discover skills
         customizations.extend(self._discover_skills(base_path, level))
@@ -111,6 +113,19 @@ class ConfigDiscoveryService:
 
         return customizations
 
+    def _discover_inline_commands(self, level: ConfigLevel) -> list[Customization]:
+        """Discover inline commands from opencode.json."""
+        if level == ConfigLevel.GLOBAL:
+            config_path = self.global_config_path / "opencode.json"
+        else:
+            config_path = self.project_root / "opencode.json"
+
+        parser = self._parsers[CustomizationType.COMMAND]
+        if isinstance(parser, CommandParser) and config_path.exists():
+            return parser.parse_inline_commands(config_path, level)
+
+        return []
+
     def _discover_agents(
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
@@ -127,6 +142,19 @@ class ConfigDiscoveryService:
                 customizations.append(parser.parse(md_file, level))
 
         return customizations
+
+    def _discover_inline_agents(self, level: ConfigLevel) -> list[Customization]:
+        """Discover inline agents from opencode.json."""
+        if level == ConfigLevel.GLOBAL:
+            config_path = self.global_config_path / "opencode.json"
+        else:
+            config_path = self.project_root / "opencode.json"
+
+        parser = self._parsers[CustomizationType.AGENT]
+        if isinstance(parser, AgentParser) and config_path.exists():
+            return parser.parse_inline_agents(config_path, level)
+
+        return []
 
     def _discover_skills(
         self, base_path: Path, level: ConfigLevel
