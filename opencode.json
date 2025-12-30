@@ -4,6 +4,7 @@
     "permission": {
         "external_directory": "allow",
         "bash": {
+            "scripts/check_quality.sh": "allow",
             "bash scripts/check_quality.sh": "allow",
             "uv run pytest *": "allow",
             "git push": "ask",
