@@ -1,9 +1,29 @@
 """Core data models for LazyOpenCode."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+
+@dataclass
+class SkillFile:
+    """A file or directory within a skill folder."""
+
+    name: str
+    path: Path
+    content: str | None = None
+    is_directory: bool = False
+    children: list[SkillFile] = field(default_factory=list)
+
+
+@dataclass
+class SkillMetadata:
+    """Metadata specific to skills."""
+
+    files: list[SkillFile] = field(default_factory=list)
 
 
 class ConfigLevel(Enum):

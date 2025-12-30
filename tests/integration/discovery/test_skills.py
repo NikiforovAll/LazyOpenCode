@@ -123,3 +123,50 @@ class TestSkillDiscovery:
 
         assert project_skill.description == "Project-specific skill"
         assert project_skill.level == ConfigLevel.PROJECT
+
+    def test_skill_files_parsed(
+        self,
+        user_config_path: Path,  # noqa: ARG002
+        fake_project_root: Path,
+        fake_home: Path,
+    ) -> None:
+        """Test skill files list is populated with SkillFile objects."""
+        service = ConfigDiscoveryService(
+            project_root=fake_project_root,
+            global_config_path=fake_home / ".config" / "opencode",
+        )
+
+        skills = service.by_type(CustomizationType.SKILL)
+        task_tracker = next(s for s in skills if s.name == "task-tracker")
+
+        files = task_tracker.metadata.get("files", [])
+        assert len(files) > 0
+        # Check that we have reference.md and scripts directory
+        file_names = {f.name for f in files}
+        assert "reference.md" in file_names
+        assert "scripts" in file_names
+
+    def test_skill_nested_directory_structure(
+        self,
+        project_config_path: Path,  # noqa: ARG002
+        fake_project_root: Path,
+        fake_home: Path,
+    ) -> None:
+        """Test nested directories and their children are parsed."""
+        service = ConfigDiscoveryService(
+            project_root=fake_project_root,
+            global_config_path=fake_home / ".config" / "opencode",
+        )
+
+        skills = service.by_type(CustomizationType.SKILL)
+        project_skill = next(s for s in skills if s.name == "project-skill")
+
+        files = project_skill.metadata.get("files", [])
+        # Find the src directory
+        src_dir = next((f for f in files if f.name == "src"), None)
+        assert src_dir is not None
+        assert src_dir.is_directory
+        # Check children
+        assert len(src_dir.children) > 0
+        child_names = {c.name for c in src_dir.children}
+        assert "helper.py" in child_names

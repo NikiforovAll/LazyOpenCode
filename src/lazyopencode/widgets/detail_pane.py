@@ -75,6 +75,7 @@ class MainPane(Widget):
     customization: reactive[Customization | None] = reactive(None)
     view_mode: reactive[str] = reactive("content")
     display_path: reactive[Path | None] = reactive(None)
+    selected_file: reactive[Path | None] = reactive(None)
 
     def __init__(
         self,
@@ -115,9 +116,12 @@ class MainPane(Widget):
             lines.append(f"[dim]Description:[/] {c.description}")
 
         if c.metadata:
-            lines.append("")
-            for key, value in c.metadata.items():
-                if key not in ("description",):
+            # Skip internal fields (files is used for tree navigation)
+            skip_keys = {"description", "files"}
+            extra_metadata = {k: v for k, v in c.metadata.items() if k not in skip_keys}
+            if extra_metadata:
+                lines.append("")
+                for key, value in extra_metadata.items():
                     lines.append(f"[dim]{key}:[/] {value}")
 
         if c.has_error:
@@ -155,6 +159,10 @@ class MainPane(Widget):
 
     def _render_file_content(self) -> RenderableType:
         """Render file content view with syntax highlighting."""
+        # Check if a specific file is selected (from skill tree)
+        if self.selected_file:
+            return self._render_selected_file()
+
         if not self.customization:
             return "[dim italic]No content to display[/]"
         if self.customization.has_error:
@@ -194,6 +202,48 @@ class MainPane(Widget):
             word_wrap=True,
         )
 
+    def _render_selected_file(self) -> RenderableType:
+        """Render content of a selected file (from skill tree)."""
+        if not self.selected_file:
+            return "[dim italic]No file selected[/]"
+
+        path = self.selected_file
+        if path.is_dir():
+            return f"[bold]{path.name}/[/]\n\n[dim](directory)[/]"
+
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError as e:
+            return f"[red]Error reading file:[/] {e}"
+
+        if not content:
+            return "[dim italic]Empty file[/]"
+
+        suffix = path.suffix.lower()
+        theme = self._get_syntax_theme()
+
+        lexer_map = {
+            ".md": "markdown",
+            ".json": "json",
+            ".py": "python",
+            ".sh": "bash",
+            ".yaml": "yaml",
+            ".yml": "yaml",
+            ".js": "javascript",
+            ".ts": "typescript",
+        }
+        lexer = lexer_map.get(suffix, "text")
+
+        if suffix == ".md":
+            return self._render_markdown_with_frontmatter(content)
+
+        return Syntax(
+            content,
+            lexer,
+            theme=theme,
+            word_wrap=True,
+        )
+
     def on_mount(self) -> None:
         """Handle mount event."""
         self._update_title()
@@ -208,9 +258,14 @@ class MainPane(Widget):
         self.border_title = f"[0]-{tabs}-"
 
     def _render_footer(self) -> str:
-        """Render the panel footer with file path."""
+        """Render the panel footer with file path.
+
+        Priority: display_path > selected_file > customization.path
+        """
         if self.display_path:
             return str(self.display_path)
+        if self.selected_file:
+            return str(self.selected_file)
         if not self.customization:
             return ""
         return str(self.customization.path)
@@ -222,8 +277,14 @@ class MainPane(Widget):
 
     def watch_customization(self, customization: Customization | None) -> None:
         """React to customization changes."""
+        self.selected_file = None
         if customization is None:
             self.display_path = None
+        self.border_subtitle = self._render_footer()
+        self._refresh_display()
+
+    def watch_selected_file(self, _path: Path | None) -> None:
+        """React to selected file changes (for skill files)."""
         self.border_subtitle = self._render_footer()
         self._refresh_display()
 

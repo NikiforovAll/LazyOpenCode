@@ -162,6 +162,13 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
             self._main_pane.customization = message.customization
             self._main_pane.focus()
 
+    def on_type_panel_skill_file_selected(
+        self, message: TypePanel.SkillFileSelected
+    ) -> None:
+        """Handle skill file selection in the skills tree."""
+        if self._main_pane:
+            self._main_pane.selected_file = message.file_path
+
     def on_combined_panel_selection_changed(
         self, message: CombinedPanel.SelectionChanged
     ) -> None:

@@ -7,6 +7,7 @@ from lazyopencode.models.customization import (
     Customization,
     CustomizationType,
 )
+from lazyopencode.services.gitignore_filter import GitignoreFilter
 from lazyopencode.services.parsers.agent import AgentParser
 from lazyopencode.services.parsers.command import CommandParser
 from lazyopencode.services.parsers.mcp import MCPParser
@@ -33,10 +34,13 @@ class ConfigDiscoveryService:
         self.global_config_path = global_config_path or (
             Path.home() / ".config" / "opencode"
         )
+        self._gitignore_filter = GitignoreFilter(project_root=self.project_root)
         self._parsers = {
             CustomizationType.COMMAND: CommandParser(),
             CustomizationType.AGENT: AgentParser(),
-            CustomizationType.SKILL: SkillParser(),
+            CustomizationType.SKILL: SkillParser(
+                gitignore_filter=self._gitignore_filter
+            ),
             CustomizationType.RULES: RulesParser(),
             CustomizationType.MCP: MCPParser(),
         }
