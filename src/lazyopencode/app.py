@@ -68,16 +68,17 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
             self._status_panel = StatusPanel(id="status-panel")
             yield self._status_panel
 
-            # [1]+[2] Combined Panel: Commands, Agents
-            cp1 = CombinedPanel(
-                tabs=[
-                    (CustomizationType.COMMAND, 1, "Commands"),
-                    (CustomizationType.AGENT, 2, "Agents"),
-                ],
-                id="panel-combined-1",
-            )
-            self._panels.append(cp1)
-            yield cp1
+            # [1] Type Panel: Commands
+            tp_cmd = TypePanel(CustomizationType.COMMAND, id="panel-command")
+            tp_cmd.panel_number = 1
+            self._panels.append(tp_cmd)
+            yield tp_cmd
+
+            # [2] Type Panel: Agents
+            tp_agent = TypePanel(CustomizationType.AGENT, id="panel-agent")
+            tp_agent.panel_number = 2
+            self._panels.append(tp_agent)
+            yield tp_agent
 
             # [3] Type Panel: Skills
             tp_skills = TypePanel(CustomizationType.SKILL, id="panel-skill")
@@ -85,23 +86,18 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
             self._panels.append(tp_skills)
             yield tp_skills
 
-            # [4] Type Panel: Agent Memory (Rules)
-            tp_rules = TypePanel(CustomizationType.RULES, id="panel-rules")
-            tp_rules.panel_number = 4
-            self._panels.append(tp_rules)
-            yield tp_rules
-
-            # [5]+[6]+[7] Combined Panel: MCPs, Tools, Plugins
-            cp2 = CombinedPanel(
+            # [4]+[5]+[6]+[7] Combined Panel: Memory, MCPs, Tools, Plugins
+            cp = CombinedPanel(
                 tabs=[
+                    (CustomizationType.RULES, 4, "Memory"),
                     (CustomizationType.MCP, 5, "MCPs"),
                     (CustomizationType.TOOL, 6, "Tools"),
                     (CustomizationType.PLUGIN, 7, "Plugins"),
                 ],
-                id="panel-combined-2",
+                id="panel-combined",
             )
-            self._panels.append(cp2)
-            yield cp2
+            self._panels.append(cp)
+            yield cp
 
         self._main_pane = MainPane(id="main-pane")
         yield self._main_pane
