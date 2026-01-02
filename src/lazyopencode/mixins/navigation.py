@@ -80,70 +80,65 @@ class NavigationMixin:
             prev_panel.focus()
 
     def action_focus_panel_1(self) -> None:
-        """Focus Commands tab in first combined panel."""
+        """Focus Commands panel."""
         app = cast("LazyOpenCode", self)
-        from lazyopencode.widgets.combined_panel import CombinedPanel
-
         if len(app._panels) > 0:
-            panel = app._panels[0]
-            if isinstance(panel, CombinedPanel):
-                panel.switch_to_tab(0)  # Commands tab
-            panel.focus()
+            app._panels[0].focus()
 
     def action_focus_panel_2(self) -> None:
-        """Focus Agents tab in first combined panel."""
-        app = cast("LazyOpenCode", self)
-        from lazyopencode.widgets.combined_panel import CombinedPanel
-
-        if len(app._panels) > 0:
-            panel = app._panels[0]
-            if isinstance(panel, CombinedPanel):
-                panel.switch_to_tab(1)  # Agents tab
-            panel.focus()
-
-    def action_focus_panel_3(self) -> None:
-        """Focus Skills panel."""
+        """Focus Agents panel."""
         app = cast("LazyOpenCode", self)
         if len(app._panels) > 1:
             app._panels[1].focus()
 
-    def action_focus_panel_4(self) -> None:
-        """Focus Agent Memory (Rules) panel."""
+    def action_focus_panel_3(self) -> None:
+        """Focus Skills panel."""
         app = cast("LazyOpenCode", self)
         if len(app._panels) > 2:
             app._panels[2].focus()
 
-    def action_focus_panel_5(self) -> None:
-        """Focus MCPs tab in second combined panel."""
+    def action_focus_panel_4(self) -> None:
+        """Focus Agent Memory (Rules) tab in combined panel."""
         app = cast("LazyOpenCode", self)
         from lazyopencode.widgets.combined_panel import CombinedPanel
 
         if len(app._panels) > 3:
             panel = app._panels[3]
             if isinstance(panel, CombinedPanel):
-                panel.switch_to_tab(0)  # MCPs tab
+                panel.switch_to_tab(0)  # Memory tab
+            panel.focus()
+
+    def action_focus_panel_5(self) -> None:
+        """Focus MCPs tab in combined panel."""
+        app = cast("LazyOpenCode", self)
+        from lazyopencode.widgets.combined_panel import CombinedPanel
+
+        if len(app._panels) > 3:
+            panel = app._panels[3]
+            if isinstance(panel, CombinedPanel):
+                panel.switch_to_tab(1)  # MCPs tab
             panel.focus()
 
     def action_focus_panel_6(self) -> None:
-        """Focus Tools tab in second combined panel."""
+        """Focus Tools tab in combined panel."""
         app = cast("LazyOpenCode", self)
         from lazyopencode.widgets.combined_panel import CombinedPanel
 
         if len(app._panels) > 3:
             panel = app._panels[3]
             if isinstance(panel, CombinedPanel):
-                panel.switch_to_tab(1)  # Tools tab
+                panel.switch_to_tab(2)  # Tools tab
             panel.focus()
 
     def action_focus_panel_7(self) -> None:
-        """Focus Plugins tab in second combined panel."""
+        """Focus Plugins tab in combined panel."""
         app = cast("LazyOpenCode", self)
         from lazyopencode.widgets.combined_panel import CombinedPanel
 
         if len(app._panels) > 3:
             panel = app._panels[3]
             if isinstance(panel, CombinedPanel):
-                panel.switch_to_tab(2)  # Plugins tab
+                panel.switch_to_tab(3)  # Plugins tab
             panel.focus()
 
     def action_focus_main_pane(self) -> None:
