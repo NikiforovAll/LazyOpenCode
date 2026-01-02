@@ -121,6 +121,9 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         self._update_status_panel()
         project_name = self._discovery_service.project_root.name
         self.title = f"{project_name} - LazyOpenCode"
+        self.console.set_window_title(self.title)
+        if os.name == "nt":
+            os.system(f"title {self.title}")
         # Focus first non-empty panel or first panel
         if self._panels:
             self._panels[0].focus()
