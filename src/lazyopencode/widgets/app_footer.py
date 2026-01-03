@@ -44,7 +44,7 @@ class AppFooter(Widget):
 
         return (
             f"[bold]q[/] Quit  [bold]?[/] Help  [bold]r[/] Refresh  "
-            f"[bold]e[/] Edit  "
+            f"[bold]e[/] Edit  [bold]c[/] Copy  "
             f"{all_key}  {user_key}  {project_key}  "
             f"{search_key}  │  [bold][$accent]^p[/][/] Palette"
         )

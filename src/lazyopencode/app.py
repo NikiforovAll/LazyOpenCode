@@ -16,6 +16,7 @@ from lazyopencode.mixins.help import HelpMixin
 from lazyopencode.mixins.navigation import NavigationMixin
 from lazyopencode.models.customization import (
     ConfigLevel,
+    ConfigSource,
     Customization,
     CustomizationType,
 )
@@ -25,6 +26,7 @@ from lazyopencode.widgets.app_footer import AppFooter
 from lazyopencode.widgets.combined_panel import CombinedPanel
 from lazyopencode.widgets.detail_pane import MainPane
 from lazyopencode.widgets.filter_input import FilterInput
+from lazyopencode.widgets.level_selector import LevelSelector
 from lazyopencode.widgets.status_panel import StatusPanel
 from lazyopencode.widgets.type_panel import TypePanel
 
@@ -44,6 +46,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         discovery_service: ConfigDiscoveryService | None = None,
         project_root: Path | None = None,
         global_config_path: Path | None = None,
+        enable_claude_code: bool = False,
     ) -> None:
         """Initialize LazyOpenCode application."""
         super().__init__()
@@ -51,6 +54,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         self._discovery_service = discovery_service or ConfigDiscoveryService(
             project_root=project_root,
             global_config_path=global_config_path,
+            enable_claude_code=enable_claude_code,
         )
         self._customizations: list[Customization] = []
         self._level_filter: ConfigLevel | None = None
@@ -60,7 +64,9 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         self._main_pane: MainPane | None = None
         self._filter_input: FilterInput | None = None
         self._app_footer: AppFooter | None = None
+        self._level_selector: LevelSelector | None = None
         self._last_focused_panel: TypePanel | CombinedPanel | None = None
+        self._pending_customization: Customization | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
@@ -104,6 +110,9 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
 
         self._filter_input = FilterInput(id="filter-input")
         yield self._filter_input
+
+        self._level_selector = LevelSelector(id="level-selector")
+        yield self._level_selector
 
         self._app_footer = AppFooter(id="app-footer")
         yield self._app_footer
@@ -153,7 +162,12 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Get customizations filtered by current level and search query."""
         result = self._customizations
         if self._level_filter:
-            result = [c for c in result if c.level == self._level_filter]
+            # When filtering by level, only show OpenCode items (exclude Claude Code)
+            result = [
+                c
+                for c in result
+                if c.level == self._level_filter and c.source == ConfigSource.OPENCODE
+            ]
         if self._search_query:
             query = self._search_query.lower()
             result = [c for c in result if query in c.name.lower()]
@@ -296,14 +310,130 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         except Exception as e:
             self.notify(f"Error opening editor: {e}", severity="error")
 
+    # Copy actions
+
+    def action_copy_customization(self) -> None:
+        """Copy selected customization to another level."""
+        panel = self._get_focused_panel()
+        customization = None
+
+        if panel:
+            customization = panel.selected_customization
+
+        if not customization:
+            self.notify("No customization selected", severity="warning")
+            return
+
+        # Only allow copying commands, agents, and skills
+        copyable_types = (
+            CustomizationType.COMMAND,
+            CustomizationType.AGENT,
+            CustomizationType.SKILL,
+        )
+        if customization.type not in copyable_types:
+            self.notify(
+                f"Cannot copy {customization.type_label} customizations",
+                severity="warning",
+            )
+            return
+
+        available = customization.get_copy_targets()
+        if not available:
+            self.notify("No available target levels", severity="warning")
+            return
+
+        self._pending_customization = customization
+        self._last_focused_panel = panel
+        if self._level_selector:
+            self._level_selector.show(available, customization.name)
+
+    def action_copy_path_to_clipboard(self) -> None:
+        """Copy path of selected customization to clipboard."""
+        panel = self._get_focused_panel()
+        customization = None
+
+        if panel:
+            customization = panel.selected_customization
+
+        if not customization:
+            self.notify("No customization selected", severity="warning")
+            return
+
+        file_path = customization.path
+        if customization.type == CustomizationType.SKILL:
+            file_path = customization.path.parent
+
+        try:
+            import pyperclip
+
+            pyperclip.copy(str(file_path))
+            self.notify(f"Copied: {file_path}", severity="information")
+        except ImportError:
+            self.notify(
+                "pyperclip not installed. Run: pip install pyperclip",
+                severity="error",
+            )
+        except Exception as e:
+            self.notify(f"Failed to copy to clipboard: {e}", severity="error")
+
+    # Level selector message handlers
+
+    def on_level_selector_level_selected(
+        self, message: LevelSelector.LevelSelected
+    ) -> None:
+        """Handle level selection from the level selector."""
+        if self._pending_customization:
+            self._handle_copy(self._pending_customization, message.level)
+            self._pending_customization = None
+        self._restore_focus_after_selector()
+
+    def on_level_selector_selection_cancelled(
+        self,
+        message: LevelSelector.SelectionCancelled,  # noqa: ARG002
+    ) -> None:
+        """Handle level selector cancellation."""
+        self._pending_customization = None
+        self._restore_focus_after_selector()
+
+    def _handle_copy(
+        self, customization: Customization, target_level: ConfigLevel
+    ) -> None:
+        """Handle copy operation."""
+        from lazyopencode.services.writer import CustomizationWriter
+
+        writer = CustomizationWriter(
+            global_config_path=self._discovery_service.global_config_path,
+            project_config_path=self._discovery_service.project_config_path,
+        )
+
+        success, msg = writer.copy_customization(customization, target_level)
+
+        if success:
+            self.notify(msg, severity="information")
+            self.action_refresh()
+        else:
+            self.notify(msg, severity="error")
+
+    def _restore_focus_after_selector(self) -> None:
+        """Restore focus to the previously focused panel."""
+        if self._last_focused_panel:
+            self._last_focused_panel.focus()
+        elif self._panels:
+            self._panels[0].focus()
+
 
 def create_app(
     project_root: Path | None = None,
     global_config_path: Path | None = None,
+    enable_claude_code: bool = False,
 ) -> LazyOpenCode:
     """Create application with all dependencies wired."""
     discovery_service = ConfigDiscoveryService(
         project_root=project_root,
         global_config_path=global_config_path,
+        enable_claude_code=enable_claude_code,
     )
-    return LazyOpenCode(discovery_service=discovery_service)
+    return LazyOpenCode(
+        discovery_service=discovery_service,
+        enable_claude_code=enable_claude_code,
+    )

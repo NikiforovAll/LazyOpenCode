@@ -38,11 +38,22 @@ def main() -> None:
         help="Override user config path (default: ~/.config/opencode)",
     )
 
+    parser.add_argument(
+        "--claude-code",
+        action="store_true",
+        default=False,
+        help="Enable Claude Code customizations discovery (from ~/.claude/)",
+    )
+
     args = parser.parse_args()
 
     # Handle directory argument - resolve to absolute path
     project_root = args.directory.resolve() if args.directory else None
     user_config = args.user_config.resolve() if args.user_config else None
 
-    app = create_app(project_root=project_root, global_config_path=user_config)
+    app = create_app(
+        project_root=project_root,
+        global_config_path=user_config,
+        enable_claude_code=args.claude_code,
+    )
     app.run()

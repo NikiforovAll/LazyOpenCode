@@ -1,7 +1,10 @@
 """Configuration discovery service."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from lazyopencode.models.customization import (
     ConfigLevel,
@@ -18,6 +21,9 @@ from lazyopencode.services.parsers.rules import RulesParser
 from lazyopencode.services.parsers.skill import SkillParser
 from lazyopencode.services.parsers.tool import ToolParser
 
+if TYPE_CHECKING:
+    from lazyopencode.services.claude_code.discovery import ClaudeCodeDiscoveryService
+
 
 class ConfigDiscoveryService:
     """Discovers OpenCode customizations from filesystem."""
@@ -26,6 +32,7 @@ class ConfigDiscoveryService:
         self,
         project_root: Path | None = None,
         global_config_path: Path | None = None,
+        enable_claude_code: bool = False,
     ) -> None:
         """
         Initialize discovery service.
@@ -33,11 +40,13 @@ class ConfigDiscoveryService:
         Args:
             project_root: Project root directory (defaults to cwd)
             global_config_path: Global config path (defaults to ~/.config/opencode)
+            enable_claude_code: Enable Claude Code customization discovery
         """
         self.project_root = project_root or Path.cwd()
         self.global_config_path = global_config_path or (
             Path.home() / ".config" / "opencode"
         )
+        self._enable_claude_code = enable_claude_code
         self._gitignore_filter = GitignoreFilter(project_root=self.project_root)
         self._parsers = {
             CustomizationType.COMMAND: CommandParser(),
@@ -51,6 +60,13 @@ class ConfigDiscoveryService:
             CustomizationType.PLUGIN: PluginParser(),
         }
         self._cache: list[Customization] | None = None
+        self._claude_code_discovery: ClaudeCodeDiscoveryService | None = None
+        if enable_claude_code:
+            from lazyopencode.services.claude_code.discovery import (
+                ClaudeCodeDiscoveryService,
+            )
+
+            self._claude_code_discovery = ClaudeCodeDiscoveryService(self.project_root)
 
     @property
     def project_config_path(self) -> Path:
@@ -75,16 +91,19 @@ class ConfigDiscoveryService:
         # Discover from project config
         customizations.extend(self._discover_level(ConfigLevel.PROJECT))
 
-        # De-duplicate by (type, name, level, resolved_path) tuple
+        # Discover Claude Code customizations (if enabled)
+        if self._claude_code_discovery:
+            customizations.extend(self._claude_code_discovery.discover_all())
+
+        # De-duplicate by (type, name, level, source, resolved_path) tuple
         # This avoids removing items that share a source file (like multiple
         # inline definitions from the same opencode.json)
         seen: set[tuple] = set()
         unique: list[Customization] = []
         for c in customizations:
             # Create a unique key for this customization
-            # For file-based items, use the resolved path
-            # For inline items, use (type, name, level) to avoid duplicates
-            key = (c.type, c.name, c.level, str(c.path.resolve()))
+            # Include source to allow same-named items from different sources
+            key = (c.type, c.name, c.level, c.source, str(c.path.resolve()))
             if key not in seen:
                 seen.add(key)
                 unique.append(c)
@@ -340,6 +359,8 @@ class ConfigDiscoveryService:
     def refresh(self) -> None:
         """Clear cache and force re-discovery."""
         self._cache = None
+        if self._claude_code_discovery:
+            self._claude_code_discovery.refresh()
 
     def by_type(self, ctype: CustomizationType) -> list[Customization]:
         """Get customizations filtered by type."""
