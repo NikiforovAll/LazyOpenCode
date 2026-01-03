@@ -11,6 +11,7 @@ A keyboard-driven TUI for managing OpenCode customizations.
 - View commands, agents, skills, rules, MCPs, and plugins
 - Filter by configuration level (global/project)
 - Search within customizations
+- Claude Code compatibility mode (`--claude-code`)
 
 ## Installation
 
@@ -38,6 +39,8 @@ pip install lazyopencode
 | `p`        | Project filter   |
 | `/`        | Search           |
 | `e`        | Edit selected    |
+| `c`        | Copy to level    |
+| `C`        | Copy path        |
 | `r`        | Refresh          |
 | `ctrl+u`   | User Config      |
 | `?`        | Help             |
@@ -56,6 +59,24 @@ LazyOpenCode discovers customizations from:
 | MCPs     | `~/.config/opencode/opencode.json` | `opencode.json`      |
 | Tools    | `~/.config/opencode/tool/`         | `.opencode/tool/`    |
 | Plugins  | `~/.config/opencode/plugin/`       | `.opencode/plugin/`  |
+
+## Claude Code Mode
+
+Enable Claude Code compatibility to also discover customizations from `~/.claude/`:
+
+```bash
+lazyopencode --claude-code
+```
+
+This discovers commands, agents, and skills from:
+
+| Scope   | Path                                      |
+| ------- | ----------------------------------------- |
+| User    | `~/.claude/commands/`, `~/.claude/agents/` |
+| Project | `.claude/commands/`, `.claude/agents/`    |
+| Plugins | Installed plugins from registry           |
+
+Claude Code items are marked with 👾 and can be copied to OpenCode paths using `c`.
 
 ## Inspired By
 
