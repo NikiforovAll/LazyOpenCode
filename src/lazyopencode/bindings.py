@@ -7,6 +7,8 @@ APP_BINDINGS: list[BindingType] = [
     Binding("?", "toggle_help", "Help"),
     Binding("r", "refresh", "Refresh"),
     Binding("e", "open_in_editor", "Edit"),
+    Binding("c", "copy_customization", "Copy"),
+    Binding("C", "copy_path_to_clipboard", "Copy Path", key_display="shift+c"),
     Binding("ctrl+u", "open_user_config", "User Config"),
     Binding("tab", "focus_next_panel", "Next Panel", show=False),
     Binding("shift+tab", "focus_previous_panel", "Prev Panel", show=False),

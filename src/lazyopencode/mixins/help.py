@@ -50,6 +50,8 @@ class HelpMixin:
                  Combined: switch tabs
 
 [bold]Actions[/]
+  c              Copy to level (modal)
+  C (shift+c)    Copy path to clipboard
   e              Open in $EDITOR
   ctrl+u         Open User Config
   r              Refresh from disk

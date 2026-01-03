@@ -43,6 +43,13 @@ class ConfigLevel(Enum):
         return "G" if self == ConfigLevel.GLOBAL else "P"
 
 
+class ConfigSource(Enum):
+    """Source of customization configuration."""
+
+    OPENCODE = "opencode"  # Native OpenCode customizations
+    CLAUDE_CODE = "claude"  # Imported from Claude Code paths
+
+
 class CustomizationType(Enum):
     """Type of OpenCode customization."""
 
@@ -93,6 +100,8 @@ class Customization:
     content: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
+    source: ConfigSource = ConfigSource.OPENCODE
+    source_level: str | None = None  # "user", "project", "plugin" for Claude Code
 
     @property
     def type_label(self) -> str:
@@ -105,16 +114,38 @@ class Customization:
         return self.level.label
 
     @property
-    def level_icon(self) -> str:
-        """Level icon for compact display."""
-        return self.level.icon
+    def level_icon(self) -> str | None:
+        """Level icon for compact display. Returns None for OpenCode items."""
+        if self.source == ConfigSource.CLAUDE_CODE:
+            return "👾"
+        return None
 
     @property
     def display_name(self) -> str:
         """Formatted name for display with level indicator."""
-        return f"[{self.level_icon}] {self.name}"
+        icon = self.level_icon
+        parts = []
+        if icon:
+            parts.append(f"[{icon}]")
+        parts.append(self.name)
+
+        # Add dimmed plugin name for plugin-sourced items
+        if self.source_level and self.source_level.startswith("plugin:"):
+            plugin_name = self.source_level.replace("plugin:", "")
+            parts.append(f"[dim]{plugin_name}[/dim]")
+
+        return " ".join(parts)
 
     @property
     def has_error(self) -> bool:
         """Check if this customization has a parse error."""
         return self.error is not None
+
+    def get_copy_targets(self) -> list[ConfigLevel]:
+        """Get valid copy target levels for this item."""
+        if self.source == ConfigSource.CLAUDE_CODE:
+            return [ConfigLevel.GLOBAL, ConfigLevel.PROJECT]
+        elif self.level == ConfigLevel.GLOBAL:
+            return [ConfigLevel.PROJECT]
+        else:
+            return [ConfigLevel.GLOBAL]
