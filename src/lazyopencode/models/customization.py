@@ -149,3 +149,14 @@ class Customization:
             return [ConfigLevel.PROJECT]
         else:
             return [ConfigLevel.GLOBAL]
+
+    def is_deletable(self) -> bool:
+        """Check if this customization can be deleted."""
+        if self.source != ConfigSource.OPENCODE:
+            return False
+        deletable_types = (
+            CustomizationType.COMMAND,
+            CustomizationType.AGENT,
+            CustomizationType.SKILL,
+        )
+        return self.type in deletable_types

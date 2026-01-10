@@ -117,3 +117,31 @@ class CustomizationWriter:
             target_dir,
             dirs_exist_ok=False,
         )
+
+    def delete_customization(
+        self,
+        customization: Customization,
+    ) -> tuple[bool, str]:
+        """
+        Delete customization from disk.
+
+        Args:
+            customization: The customization to delete
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        try:
+            if customization.type == CustomizationType.SKILL:
+                shutil.rmtree(customization.path.parent)
+            else:
+                customization.path.unlink()
+
+            return (True, f"Deleted '{customization.name}'")
+
+        except PermissionError as e:
+            return (False, f"Permission denied deleting {e.filename}")
+        except FileNotFoundError:
+            return (False, f"File not found: {customization.path}")
+        except OSError as e:
+            return (False, f"Failed to delete '{customization.name}': {e}")

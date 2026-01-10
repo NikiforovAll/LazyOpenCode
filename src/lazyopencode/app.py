@@ -24,6 +24,7 @@ from lazyopencode.services.discovery import ConfigDiscoveryService
 from lazyopencode.themes import CUSTOM_THEMES
 from lazyopencode.widgets.app_footer import AppFooter
 from lazyopencode.widgets.combined_panel import CombinedPanel
+from lazyopencode.widgets.delete_confirm import DeleteConfirm
 from lazyopencode.widgets.detail_pane import MainPane
 from lazyopencode.widgets.filter_input import FilterInput
 from lazyopencode.widgets.level_selector import LevelSelector
@@ -65,6 +66,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         self._filter_input: FilterInput | None = None
         self._app_footer: AppFooter | None = None
         self._level_selector: LevelSelector | None = None
+        self._delete_confirm: DeleteConfirm | None = None
         self._last_focused_panel: TypePanel | CombinedPanel | None = None
         self._pending_customization: Customization | None = None
 
@@ -113,6 +115,9 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
 
         self._level_selector = LevelSelector(id="level-selector")
         yield self._level_selector
+
+        self._delete_confirm = DeleteConfirm(id="delete-confirm")
+        yield self._delete_confirm
 
         self._app_footer = AppFooter(id="app-footer")
         yield self._app_footer
@@ -181,6 +186,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Handle selection change in a type panel."""
         if self._main_pane:
             self._main_pane.customization = message.customization
+        self._update_footer_can_delete(message.customization)
 
     def on_type_panel_drill_down(self, message: TypePanel.DrillDown) -> None:
         """Handle drill down into a customization."""
@@ -202,6 +208,7 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Handle selection change in the combined panel."""
         if self._main_pane:
             self._main_pane.customization = message.customization
+        self._update_footer_can_delete(message.customization)
 
     def on_combined_panel_drill_down(self, message: CombinedPanel.DrillDown) -> None:
         """Handle drill down from the combined panel."""
@@ -420,6 +427,63 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
             self._last_focused_panel.focus()
         elif self._panels:
             self._panels[0].focus()
+
+    def _update_footer_can_delete(self, customization: Customization | None) -> None:
+        """Update footer delete indicator based on current selection."""
+        if self._app_footer:
+            self._app_footer.can_delete = (
+                customization is not None and customization.is_deletable()
+            )
+
+    # Delete actions
+
+    def action_delete_customization(self) -> None:
+        """Delete selected customization."""
+        panel = self._get_focused_panel()
+        customization = panel.selected_customization if panel else None
+
+        if not customization:
+            self.notify("No customization selected", severity="warning")
+            return
+
+        if not customization.is_deletable():
+            self.notify(
+                f"Cannot delete {customization.type_label} customizations",
+                severity="warning",
+            )
+            return
+
+        self._last_focused_panel = panel
+        if self._delete_confirm:
+            self._delete_confirm.show(customization)
+
+    def on_delete_confirm_delete_confirmed(
+        self, message: DeleteConfirm.DeleteConfirmed
+    ) -> None:
+        """Handle delete confirmation."""
+        from lazyopencode.services.writer import CustomizationWriter
+
+        writer = CustomizationWriter(
+            global_config_path=self._discovery_service.global_config_path,
+            project_config_path=self._discovery_service.project_config_path,
+        )
+
+        success, msg = writer.delete_customization(message.customization)
+
+        if success:
+            self.notify(msg, severity="information")
+            self.action_refresh()
+        else:
+            self.notify(msg, severity="error")
+
+        self._restore_focus_after_selector()
+
+    def on_delete_confirm_delete_cancelled(
+        self,
+        message: DeleteConfirm.DeleteCancelled,  # noqa: ARG002
+    ) -> None:
+        """Handle delete cancellation."""
+        self._restore_focus_after_selector()
 
 
 def create_app(

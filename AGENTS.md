@@ -5,7 +5,7 @@ A keyboard-driven TUI for visualizing and managing OpenCode customizations.
 ## Environment Rules
 - **OS**: Windows (Git Bash). Use forward slashes `/` and `/c/` prefix for absolute paths.
 - **Search**: `rg` and `fd` are installed. Use them for fast searching.
-- **Quality Gates**: Always run quality gates before asking the user to commit changes. Use the `quality-gates` skill by calling the Skill tool. Do NOT run `uv run ruff`, `uv run mypy`, or other individual linting tools directly - always use the skill instead.
+- **Quality Gates**: Always run quality gates before asking the user to commit changes. Run `bash scripts/check_quality.sh` or individual checks: `uv run ruff check src/ && uv run ruff format --check src/ && uv run mypy src/ && uv run pytest tests/ -q`
 - **TUI Verification**: Do NOT run `uv run lazyopencode` to verify the application. It is a TUI and output cannot be captured effectively. Use unit tests or static analysis instead.
 
 ## Project Overview

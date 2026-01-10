@@ -26,6 +26,7 @@ class AppFooter(Widget):
 
     filter_level: reactive[str] = reactive("All")
     search_active: reactive[bool] = reactive(False)
+    can_delete: reactive[bool] = reactive(False)
 
     def compose(self) -> ComposeResult:
         """Compose the footer content."""
@@ -42,9 +43,11 @@ class AppFooter(Widget):
         )
         search_key = format_keybinding("/", "Search", active=self.search_active)
 
+        delete_part = "  [bold]d[/] Delete" if self.can_delete else ""
+
         return (
             f"[bold]q[/] Quit  [bold]?[/] Help  [bold]r[/] Refresh  "
-            f"[bold]e[/] Edit  [bold]c[/] Copy  "
+            f"[bold]e[/] Edit  [bold]c[/] Copy{delete_part}  "
             f"{all_key}  {user_key}  {project_key}  "
             f"{search_key}  │  [bold][$accent]^p[/][/] Palette"
         )
@@ -68,4 +71,8 @@ class AppFooter(Widget):
 
     def watch_search_active(self, _active: bool) -> None:
         """React to search active changes."""
+        self._update_content()
+
+    def watch_can_delete(self, _can: bool) -> None:
+        """React to can_delete changes."""
         self._update_content()
