@@ -274,7 +274,6 @@ class LazyOpenCode(App, NavigationMixin, FilteringMixin, HelpMixin):
         """Refresh customizations from disk."""
         self._discovery_service.refresh()
         self._load_customizations()
-        self.notify("Refreshed", severity="information")
 
     # action_toggle_help handled by HelpMixin
 
