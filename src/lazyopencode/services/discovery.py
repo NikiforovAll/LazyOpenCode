@@ -73,6 +73,19 @@ class ConfigDiscoveryService:
         """Path to project's .opencode directory."""
         return self.project_root / ".opencode"
 
+    def _get_path_variants(self, base_path: Path, singular: str) -> list[Path]:
+        """Return both singular and plural path variants that exist.
+
+        Args:
+            base_path: Base directory to check
+            singular: Singular form of folder name (e.g., 'command')
+
+        Returns:
+            List of existing paths (both singular and plural if they exist)
+        """
+        variants = [base_path / singular, base_path / f"{singular}s"]
+        return [p for p in variants if p.exists()]
+
     def discover_all(self) -> list[Customization]:
         """
         Discover all customizations from global and project levels.
@@ -152,16 +165,13 @@ class ConfigDiscoveryService:
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
         """Discover command customizations."""
-        commands_path = base_path / "command"
-        if not commands_path.exists():
-            return []
-
         customizations = []
         parser = self._parsers[CustomizationType.COMMAND]
 
-        for md_file in commands_path.glob("*.md"):
-            if parser.can_parse(md_file):
-                customizations.append(parser.parse(md_file, level))
+        for commands_path in self._get_path_variants(base_path, "command"):
+            for md_file in commands_path.glob("*.md"):
+                if parser.can_parse(md_file):
+                    customizations.append(parser.parse(md_file, level))
 
         return customizations
 
@@ -182,16 +192,13 @@ class ConfigDiscoveryService:
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
         """Discover agent customizations."""
-        agents_path = base_path / "agent"
-        if not agents_path.exists():
-            return []
-
         customizations = []
         parser = self._parsers[CustomizationType.AGENT]
 
-        for md_file in agents_path.glob("*.md"):
-            if parser.can_parse(md_file):
-                customizations.append(parser.parse(md_file, level))
+        for agents_path in self._get_path_variants(base_path, "agent"):
+            for md_file in agents_path.glob("*.md"):
+                if parser.can_parse(md_file):
+                    customizations.append(parser.parse(md_file, level))
 
         return customizations
 
@@ -211,37 +218,28 @@ class ConfigDiscoveryService:
     def _discover_skills(
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
-        """Discover skill customizations from .opencode/skill/."""
-        customizations = []
-
-        # Discover from standard OpenCode path
-        skills_path = base_path / "skill"
-        customizations.extend(self._discover_skills_from_path(skills_path, level))
-
-        # Also discover from Claude-compatible path at project level
-        if level == ConfigLevel.PROJECT:
-            claude_skills_path = self.project_root / ".claude" / "skills"
-            customizations.extend(
-                self._discover_skills_from_path(claude_skills_path, level)
-            )
-
-        return customizations
-
-    def _discover_skills_from_path(
-        self, skills_path: Path, level: ConfigLevel
-    ) -> list[Customization]:
-        """Discover skills from a specific directory path."""
-        if not skills_path.exists():
-            return []
-
+        """Discover skill customizations from .opencode/skill/ or skills/."""
         customizations = []
         parser = self._parsers[CustomizationType.SKILL]
 
-        for skill_dir in skills_path.iterdir():
-            if skill_dir.is_dir():
-                skill_file = skill_dir / "SKILL.md"
-                if parser.can_parse(skill_file):
-                    customizations.append(parser.parse(skill_file, level))
+        # Check both singular and plural variants
+        for skills_path in self._get_path_variants(base_path, "skill"):
+            for skill_dir in skills_path.iterdir():
+                if skill_dir.is_dir():
+                    skill_file = skill_dir / "SKILL.md"
+                    if parser.can_parse(skill_file):
+                        customizations.append(parser.parse(skill_file, level))
+
+        # Also discover from Claude-compatible path at project level
+        if level == ConfigLevel.PROJECT:
+            for claude_skills_path in self._get_path_variants(
+                self.project_root / ".claude", "skill"
+            ):
+                for skill_dir in claude_skills_path.iterdir():
+                    if skill_dir.is_dir():
+                        skill_file = skill_dir / "SKILL.md"
+                        if parser.can_parse(skill_file):
+                            customizations.append(parser.parse(skill_file, level))
 
         return customizations
 
@@ -278,16 +276,13 @@ class ConfigDiscoveryService:
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
         """Discover tool customizations from .opencode/tool/."""
-        tools_path = base_path / "tool"
-        if not tools_path.exists():
-            return []
-
         customizations = []
         parser = self._parsers[CustomizationType.TOOL]
 
-        for tool_file in tools_path.iterdir():
-            if tool_file.is_file() and parser.can_parse(tool_file):
-                customizations.append(parser.parse(tool_file, level))
+        for tools_path in self._get_path_variants(base_path, "tool"):
+            for tool_file in tools_path.iterdir():
+                if tool_file.is_file() and parser.can_parse(tool_file):
+                    customizations.append(parser.parse(tool_file, level))
 
         return customizations
 
@@ -295,16 +290,13 @@ class ConfigDiscoveryService:
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
         """Discover plugin customizations from .opencode/plugin/."""
-        plugins_path = base_path / "plugin"
-        if not plugins_path.exists():
-            return []
-
         customizations = []
         parser = self._parsers[CustomizationType.PLUGIN]
 
-        for plugin_file in plugins_path.iterdir():
-            if plugin_file.is_file() and parser.can_parse(plugin_file):
-                customizations.append(parser.parse(plugin_file, level))
+        for plugins_path in self._get_path_variants(base_path, "plugin"):
+            for plugin_file in plugins_path.iterdir():
+                if plugin_file.is_file() and parser.can_parse(plugin_file):
+                    customizations.append(parser.parse(plugin_file, level))
 
         return customizations
 

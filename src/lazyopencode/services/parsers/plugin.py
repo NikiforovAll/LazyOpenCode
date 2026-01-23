@@ -32,7 +32,7 @@ class PluginParser(ICustomizationParser):
         return (
             path.is_file()
             and path.suffix in self.VALID_EXTENSIONS
-            and path.parent.name == "plugin"
+            and path.parent.name in ("plugin", "plugins")
         )
 
     def parse(self, path: Path, level: ConfigLevel) -> Customization:
