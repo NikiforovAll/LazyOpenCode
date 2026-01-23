@@ -23,7 +23,11 @@ class CommandParser(ICustomizationParser):
 
     def can_parse(self, path: Path) -> bool:
         """Check if path is a command markdown file."""
-        return path.is_file() and path.suffix == ".md" and path.parent.name == "command"
+        return (
+            path.is_file()
+            and path.suffix == ".md"
+            and path.parent.name in ("command", "commands")
+        )
 
     def parse(self, path: Path, level: ConfigLevel) -> Customization:
         """Parse command file."""

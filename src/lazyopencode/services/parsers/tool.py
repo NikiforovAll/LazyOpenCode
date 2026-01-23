@@ -24,7 +24,7 @@ class ToolParser(ICustomizationParser):
         return (
             path.is_file()
             and path.suffix in self.VALID_EXTENSIONS
-            and path.parent.name == "tool"
+            and path.parent.name in ("tool", "tools")
         )
 
     def parse(self, path: Path, level: ConfigLevel) -> Customization:

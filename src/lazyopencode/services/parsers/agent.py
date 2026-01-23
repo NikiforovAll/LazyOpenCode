@@ -23,7 +23,11 @@ class AgentParser(ICustomizationParser):
 
     def can_parse(self, path: Path) -> bool:
         """Check if path is an agent markdown file."""
-        return path.is_file() and path.suffix == ".md" and path.parent.name == "agent"
+        return (
+            path.is_file()
+            and path.suffix == ".md"
+            and path.parent.name in ("agent", "agents")
+        )
 
     def parse(self, path: Path, level: ConfigLevel) -> Customization:
         """Parse agent file."""
