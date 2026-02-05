@@ -146,6 +146,66 @@ class TestSkillDiscovery:
         assert "reference.md" in file_names
         assert "scripts" in file_names
 
+    def test_discovers_project_agents_compat_skills(
+        self,
+        agents_project_skills: Path,  # noqa: ARG002
+        fake_project_root: Path,
+        fake_home: Path,
+    ) -> None:
+        """Test discovering skills from .agents/skills/ at project level."""
+        service = ConfigDiscoveryService(
+            project_root=fake_project_root,
+            global_config_path=fake_home / ".config" / "opencode",
+        )
+
+        skills = service.by_type(CustomizationType.SKILL)
+        project_skills = [s for s in skills if s.level == ConfigLevel.PROJECT]
+
+        assert len(project_skills) == 1
+        assert project_skills[0].name == "agents-compat-skill"
+        assert project_skills[0].description == "Skill discovered from .agents/ path"
+
+    def test_discovers_global_agents_compat_skills(
+        self,
+        agents_global_skills: Path,  # noqa: ARG002
+        fake_project_root: Path,
+        fake_home: Path,
+    ) -> None:
+        """Test discovering skills from ~/.agents/skills/ at global level."""
+        service = ConfigDiscoveryService(
+            project_root=fake_project_root,
+            global_config_path=fake_home / ".config" / "opencode",
+        )
+
+        skills = service.by_type(CustomizationType.SKILL)
+        global_skills = [s for s in skills if s.level == ConfigLevel.GLOBAL]
+
+        assert len(global_skills) == 1
+        assert global_skills[0].name == "agents-compat-skill"
+
+    def test_agents_compat_skills_deduplicated(
+        self,
+        project_config_path: Path,  # noqa: ARG002
+        agents_project_skills: Path,  # noqa: ARG002
+        fake_project_root: Path,
+        fake_home: Path,
+    ) -> None:
+        """Test that same skill in .opencode/ and .agents/ is not duplicated."""
+        # The agents-compat-skill is only in .agents/, project-skill is only in .opencode/
+        # So total project skills should be 2, not 3
+        service = ConfigDiscoveryService(
+            project_root=fake_project_root,
+            global_config_path=fake_home / ".config" / "opencode",
+        )
+
+        skills = service.by_type(CustomizationType.SKILL)
+        project_skills = [s for s in skills if s.level == ConfigLevel.PROJECT]
+
+        names = [s.name for s in project_skills]
+        assert "project-skill" in names
+        assert "agents-compat-skill" in names
+        assert len(project_skills) == 2
+
     def test_skill_nested_directory_structure(
         self,
         project_config_path: Path,  # noqa: ARG002

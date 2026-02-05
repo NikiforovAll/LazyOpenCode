@@ -85,6 +85,8 @@ The application discovers customizations from these locations:
 | Commands | `~/.config/opencode/command/*.md` | `.opencode/command/*.md` |
 | Agents | `~/.config/opencode/agent/*.md` | `.opencode/agent/*.md` |
 | Skills | `~/.config/opencode/skill/*/SKILL.md` | `.opencode/skill/*/SKILL.md` |
+| Skills | `~/.agents/skill[s]/*/SKILL.md` | `.agents/skill[s]/*/SKILL.md` |
+| Skills | (via Claude Code) `~/.claude/skills/*/SKILL.md` | `.claude/skill[s]/*/SKILL.md` |
 | Rules | `~/.config/opencode/AGENTS.md` | `AGENTS.md` |
 | MCPs | `~/.config/opencode/opencode.json` | `opencode.json` |
 | Tools | `~/.config/opencode/tool/*.ts` | `.opencode/tool/*.ts` |

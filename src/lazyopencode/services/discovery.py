@@ -218,7 +218,12 @@ class ConfigDiscoveryService:
     def _discover_skills(
         self, base_path: Path, level: ConfigLevel
     ) -> list[Customization]:
-        """Discover skill customizations from .opencode/skill/ or skills/."""
+        """Discover skill customizations from .opencode/skill/ or skills/.
+
+        Also discovers from agent-compatible paths (.agents/skill[s]/)
+        and Claude-compatible paths (.claude/skill[s]/) per OpenCode docs:
+        https://opencode.ai/docs/skills/#place-files
+        """
         customizations = []
         parser = self._parsers[CustomizationType.SKILL]
 
@@ -241,7 +246,44 @@ class ConfigDiscoveryService:
                         if parser.can_parse(skill_file):
                             customizations.append(parser.parse(skill_file, level))
 
+        # Discover from agent-compatible paths (.agents/skill[s]/)
+        self._discover_skills_from_compat_roots(
+            customizations, parser, level, ".agents"
+        )
+
         return customizations
+
+    def _discover_skills_from_compat_roots(
+        self,
+        customizations: list[Customization],
+        parser: object,
+        level: ConfigLevel,
+        compat_dir: str,
+    ) -> None:
+        """Discover skills from a compatibility root directory.
+
+        At PROJECT level: scans <project_root>/<compat_dir>/skill[s]/*/SKILL.md
+        At GLOBAL level: scans ~/<compat_dir>/skill[s]/*/SKILL.md
+
+        Args:
+            customizations: List to append discovered skills to
+            parser: Skill parser instance
+            level: Configuration level (GLOBAL or PROJECT)
+            compat_dir: Compatibility directory name (e.g., ".agents")
+        """
+        if level == ConfigLevel.PROJECT:
+            compat_base = self.project_root / compat_dir
+        else:
+            compat_base = Path.home() / compat_dir
+
+        for skills_path in self._get_path_variants(compat_base, "skill"):
+            for skill_dir in skills_path.iterdir():
+                if skill_dir.is_dir():
+                    skill_file = skill_dir / "SKILL.md"
+                    if parser.can_parse(skill_file):  # type: ignore[attr-defined]
+                        customizations.append(
+                            parser.parse(skill_file, level)  # type: ignore[attr-defined]
+                        )
 
     def _discover_rules(self, level: ConfigLevel) -> list[Customization]:
         """Discover AGENTS.md rules files."""

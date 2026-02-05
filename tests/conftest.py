@@ -147,6 +147,36 @@ def project_config_path(fake_project_root: Path, fs: FakeFilesystem) -> Path:
 
 
 @pytest.fixture
+def agents_project_skills(fake_project_root: Path, fs: FakeFilesystem) -> Path:
+    """Create .agents/skills/ directory with fixture skill at project level."""
+    agents_skills = fake_project_root / ".agents" / "skills"
+    fs.create_dir(agents_skills)
+
+    fs.add_real_directory(
+        FIXTURES_DIR / "agents-skill" / "agents-compat-skill",
+        target_path=agents_skills / "agents-compat-skill",
+        read_only=False,
+    )
+
+    return agents_skills
+
+
+@pytest.fixture
+def agents_global_skills(fake_home: Path, fs: FakeFilesystem) -> Path:
+    """Create ~/.agents/skills/ directory with fixture skill at global level."""
+    agents_skills = fake_home / ".agents" / "skills"
+    fs.create_dir(agents_skills)
+
+    fs.add_real_directory(
+        FIXTURES_DIR / "agents-skill" / "agents-compat-skill",
+        target_path=agents_skills / "agents-compat-skill",
+        read_only=False,
+    )
+
+    return agents_skills
+
+
+@pytest.fixture
 def full_user_config(
     user_config_path: Path,
     user_mcp_config: Path,  # noqa: ARG001
